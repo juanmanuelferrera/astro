@@ -15,6 +15,18 @@ body{margin:0;background:var(--ground);color:var(--ink);
 font-family:Charter,Georgia,"Times New Roman",serif;font-size:16px;line-height:1.6}
 .wrap{max-width:1020px;margin:0 auto;padding:26px 20px 80px}
 .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+/* La cabecera se queda arriba al bajar por la página: el selector de tradición
+   y el de idioma tienen que estar a mano desde cualquier sitio, y las pestañas
+   también. El fondo es opaco para que el contenido no se transparente debajo,
+   y los márgenes negativos compensan el padding del contenedor para que la
+   barra llegue de borde a borde. */
+.fija{position:sticky;top:0;z-index:20;background:var(--ground);
+  margin:-26px -20px 20px;padding:14px 20px 0}
+/* La sombra solo aparece cuando hay algo por debajo; la raya ya la pone el
+   borde inferior de las pestañas. */
+.fija.pegada{box-shadow:0 6px 16px -12px rgba(0,0,0,.45)}
+@media(max-width:560px){.fija{margin:-26px -14px 16px;padding:10px 14px 0}
+  .fija h1{font-size:1.15rem}}
 h1{font-size:1.8rem;margin:0;font-weight:600;letter-spacing:-.015em}
 .selector{display:flex;border:1px solid var(--rule);border-radius:20px;overflow:hidden;background:var(--panel)}
 .selector button{background:none;border:0;font:inherit;font-size:.85rem;padding:6px 16px;
@@ -25,7 +37,8 @@ color:var(--muted);cursor:pointer}
 font:inherit;font-size:.72rem;padding:3px 9px;cursor:pointer;font-family:ui-monospace,Menlo,monospace}
 .idioma button.on{border-color:var(--ac);color:var(--ac)}
 .lead{color:var(--muted);margin:0 0 20px;font-size:.95rem}
-nav{display:flex;gap:5px;border-bottom:1px solid var(--rule);margin-bottom:22px;flex-wrap:wrap}
+.lead:empty{margin:0}
+nav{display:flex;gap:5px;border-bottom:1px solid var(--rule);margin-bottom:0;flex-wrap:wrap}
 nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);
 padding:9px 13px;font:inherit;font-size:.9rem;cursor:pointer}
 nav button.on{color:var(--ink);border-bottom-color:var(--ac)}
@@ -120,25 +133,27 @@ footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--rule);color:v
  :root{--ground:#fff;--panel:#fff;--ink:#111;--muted:#555;--rule:#c8ccd2;--cas:#f4f2ee}
  @page{margin:14mm}body{background:#fff;font-size:11pt}.wrap{max-width:none;padding:0}
  nav,form,.huso,.hist,.guard,.estilos,.selector,.idioma,#lista{display:none!important}
+ .fija{position:static;margin:0;padding:0;box-shadow:none}
  section{display:none!important}section.on{display:block!important}
  .ficha{display:block}.cols{grid-template-columns:1fr 1fr;gap:14px}
  .caja{break-inside:avoid;padding:9px 11px}table{font-size:8.3pt}
  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body><div class="wrap">
 
-<div class="top">
-  <h1 id="titulo">Astro</h1>
-  <div class="selector">
-    <button data-t="occidental" class="on" id="btOcc"></button>
-    <button data-t="jyotisha" id="btJyo"></button>
+<header class="fija">
+  <div class="top">
+    <h1 id="titulo">Astro</h1>
+    <div class="selector">
+      <button data-t="occidental" class="on" id="btOcc"></button>
+      <button data-t="jyotisha" id="btJyo"></button>
+    </div>
+    <div class="idioma">
+      <button data-i="es" class="on">ES</button><button data-i="en">EN</button>
+    </div>
   </div>
-  <div class="idioma">
-    <button data-i="es" class="on">ES</button><button data-i="en">EN</button>
-  </div>
-</div>
+  <nav id="nav"></nav>
+</header>
 <p class="lead" id="lead"></p>
-
-<nav id="nav"></nav>
 
 <section id="carta" class="on">
   <form id="f">

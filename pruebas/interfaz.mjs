@@ -70,7 +70,8 @@ const exportar = `
   set TRAD(v){ TRAD = v }, get TRAD(){ return TRAD },
   set LANG(v){ LANG = v }, get LANG(){ return LANG },
   set DATOS(v){ DATOS = v }, get DATOS(){ return DATOS },
-  repintarTodo, comparar, pintarEjercicio, abrirModulo, leer };
+  repintarTodo, comparar, pintarEjercicio, abrirModulo, leer,
+  set SECCION(v){ SECCION = v }, get SECCION(){ return SECCION } };
 `;
 try { (0, eval)(src + exportar); ok("app.js se ejecuta entero"); }
 catch (e) { console.log("  ✗ app.js revienta al cargar");
@@ -205,6 +206,24 @@ else ok(`ningún texto español en la página en inglés (${soloEs.length} compr
       mal(`tras el switch queda español en #${sitio}`, `${k}: ${v.slice(0, 50)}`);
     });
   } else ok("tras tocar el switch no queda una sola frase en español");
+}
+
+// ── el switch no debe echarte de la pestaña donde estás ───────────────────
+{
+  const A5 = globalThis.__api;
+  A5.TRAD = "jyotisha"; A5.DATOS = datos.es.jyotisha; A5.LANG = "es";
+  for (const p of ["curso", "fuerza", "dasas", "comparar"]) {
+    A5.SECCION = p;
+    A5.LANG = "en"; await A5.repintarTodo();
+    if (A5.SECCION !== p) mal(`el switch te saca de la pestaña "${p}"`, `acabas en "${A5.SECCION}"`);
+    else ok(`sigues en "${p}" tras cambiar de idioma`);
+    A5.LANG = "es"; await A5.repintarTodo();
+  }
+  // Y al cambiar de tradición, si la pestaña no existe allí, vuelve a la primera.
+  A5.SECCION = "pancanga"; A5.TRAD = "occidental"; A5.DATOS = datos.es.occidental;
+  await A5.repintarTodo();
+  if (A5.SECCION === "carta") ok('"pancanga" no existe en occidental: vuelve a "carta"');
+  else mal("al cambiar de tradición se queda en una pestaña que no existe", A5.SECCION);
 }
 
 console.log(fallos ? `\n${fallos} fallo(s)` : "\ninterfaz correcta.");

@@ -1,5 +1,6 @@
 const $ = s => document.querySelector(s);
 let TRAD = "occidental", LANG = "es", ESTILO = "norte", DATOS = null;
+let SECCION = "carta";   // la pestaña abierta; sobrevive a los cambios de idioma
 const t = () => T[LANG];
 
 const SIGW = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
@@ -47,17 +48,24 @@ document.querySelectorAll(".estilos button").forEach(b => b.onclick = () => {
 
 function pintarNav() {
   const n = $("#nav");
-  n.innerHTML = NAV[TRAD].map((k,i) =>
-    `<button data-s="${k}" class="${i===0?"on":""}">${t().nav[k]}</button>`).join("") +
+  // Se conserva la pestaña abierta. Cambiar de idioma no debe echarte de donde
+  // estabas: si estás en el curso, sigues en el curso. Solo se vuelve a la
+  // primera cuando la pestaña no existe en la tradición nueva —el pañcāṅga no
+  // está en occidental— porque entonces no hay adónde volver.
+  const abierta = NAV[TRAD].includes(SECCION) ? SECCION : NAV[TRAD][0];
+  SECCION = abierta;
+  n.innerHTML = NAV[TRAD].map(k =>
+    `<button data-s="${k}" class="${k===abierta?"on":""}">${t().nav[k]}</button>`).join("") +
     `<button class="imp" id="imprimir">${t().nav.imprimir}</button>`;
   n.querySelectorAll("button[data-s]").forEach(b => b.onclick = () => {
+    SECCION = b.dataset.s;
     n.querySelectorAll("button[data-s]").forEach(x => x.classList.toggle("on", x===b));
     document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id===b.dataset.s));
     if (b.dataset.s === "comparar") comparar();
     if (b.dataset.s === "ejercicio") pintarEjercicio();
   });
   $("#imprimir").onclick = () => window.print();
-  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === NAV[TRAD][0]));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === abierta));
 }
 
 function aplicarIdioma() {
@@ -393,6 +401,13 @@ async function resolverHuso(){const z=$("#zona").value;if(!z)return;
   $("#husoTxt").dataset.aviso="no";
   $("#husoTxt").innerHTML=`UTC${r.offset>=0?"+":""}${r.offset} · ${r.zona}`
     +(r.verano?` · <b style="color:var(--ac)">${t().verano}</b>`:` · ${t().estandar}`);}
+// La cabecera fija solo marca su raya y su sombra cuando de verdad hay algo
+// por encima; si no, se vería una línea suelta con la página sin desplazar.
+window.addEventListener("scroll", () => {
+  const h = document.querySelector(".fija");
+  if (h) h.classList.toggle("pegada", window.scrollY > 4);
+}, { passive: true });
+
 $("#ciudad").oninput=buscarCiudad;
 $("#sug").onclick=async ev=>{const b=ev.target.closest("button");if(!b)return;
   const l=JSON.parse($("#sug").dataset.datos)[+b.dataset.i];
