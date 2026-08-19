@@ -53,7 +53,10 @@ function aplicarIdioma() {
   $("#btNorte").textContent = x.norte; $("#btSur").textContent = x.sur;
   $("#nodoTxt").textContent = x.nodo + ": " + x.nodo_verdadero;
   $("#nodoBox").title = x.nodo_ayuda;
-  if (!$("#husoTxt").textContent) $("#husoTxt").textContent = x.elige;
+  // Mientras no se haya resuelto un huso, este hueco lleva el aviso, y el
+  // aviso tiene que cambiar de idioma como todo lo demás. Con la marca puesta
+  // se sabe que lo que hay es el aviso y no un huso ya calculado.
+  if ($("#husoTxt").dataset.aviso !== "no") $("#husoTxt").textContent = x.elige;
   pintarNav(); pintarCurso();
 }
 
@@ -163,7 +166,7 @@ function params(){const [a,m,d]=$("#fecha").value.split("-"),[hh,mm]=$("#hora").
   return `anio=${+a}&mes=${+m}&dia=${+d}&hh=${+hh}&mm=${+mm}&tz=${$("#tz").value}&lat=${$("#lat").value}&lon=${$("#lon").value}`;}
 async function levantar(e){if(e)e.preventDefault();
   const nodo=TRAD==="jyotisha"&&$("#nodoV")&&$("#nodoV").checked?"&nodo=verdadero":"";
-  DATOS=await (await fetch(`/api/${TRAD==="jyotisha"?"vedica":"carta"}?`+params()+nodo)).json();
+  DATOS=await (await fetch(`/api/${TRAD==="jyotisha"?"vedica":"carta"}?`+params()+nodo+"&lang="+LANG)).json();
   const [Y,M,D]=$("#fecha").value.split("-"),[H,Mi]=$("#hora").value.split(":");
   const extra=TRAD==="jyotisha"?` · ${t().lagnaT} ${DATOS.lagnaPos}`:"";
   $("#ficha").innerHTML=`<h2>${$("#ciudad").value||"—"}</h2><p>${D}/${M}/${Y} · ${H}:${Mi} · UTC${+$("#tz").value>=0?"+":""}${$("#tz").value} · ${DATOS.ut}${extra}</p>`;
@@ -340,6 +343,7 @@ async function resolverHuso(){const z=$("#zona").value;if(!z)return;
   const [a,m,d]=$("#fecha").value.split("-"),[hh,mm]=$("#hora").value.split(":");
   const r=await (await fetch(`/api/huso?zona=${encodeURIComponent(z)}&anio=${+a}&mes=${+m}&dia=${+d}&hh=${+hh}&mm=${+mm}`)).json();
   if(r.error)return;$("#tz").value=r.offset;
+  $("#husoTxt").dataset.aviso="no";
   $("#husoTxt").innerHTML=`UTC${r.offset>=0?"+":""}${r.offset} · ${r.zona}`
     +(r.verano?` · <b style="color:var(--ac)">${t().verano}</b>`:` · ${t().estandar}`);}
 $("#ciudad").oninput=buscarCiudad;
