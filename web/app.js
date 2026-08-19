@@ -3,7 +3,8 @@ let TRAD = "occidental", LANG = "es", ESTILO = "norte", DATOS = null;
 const t = () => T[LANG];
 
 const SIGW = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
-const NOMW = ["Aries","Tauro","Géminis","Cáncer","Leo","Virgo","Libra","Escorpio","Sagitario","Capricornio","Acuario","Piscis"];
+const nom = i => SIGNOS[LANG][i];          // el signo, en el idioma activo
+const cue = n => (CUERPOS[LANG] || {})[n] || n;   // el cuerpo, idem
 const SUR = [[1,0],[2,0],[3,0],[3,1],[3,2],[3,3],[2,3],[1,3],[0,3],[0,2],[0,1],[0,0]];
 const NORTE = [[.50,.26],[.25,.11],[.11,.25],[.26,.50],[.11,.75],[.25,.89],[.50,.74],[.75,.89],[.89,.75],[.74,.50],[.89,.25],[.75,.11]];
 const gms = g => { const d=Math.floor(g), m=Math.round((g-d)*60); return m===60?`${d+1}° 00′`:`${d}° ${String(m).padStart(2,"0")}′`; };
@@ -48,6 +49,8 @@ function aplicarIdioma() {
     l.childNodes[0].nodeValue = x[et[id]]; }
   $("#bLevantar").textContent = x.levantar; $("#guardar").textContent = x.guardar;
   $("#porque").textContent = x.porque; $("#pie").textContent = x.pie;
+  $("#btOcc").textContent = x.trad_occidental; $("#btJyo").textContent = x.trad_jyotisha;
+  $("#btNorte").textContent = x.norte; $("#btSur").textContent = x.sur;
   if (!$("#husoTxt").textContent) $("#husoTxt").textContent = x.elige;
   pintarNav(); pintarCurso();
 }
@@ -99,7 +102,7 @@ function cuadroVed(grahas, lagnaRasi, titulo) {
       if(r===lagnaRasi){s+=`<line x1="${x}" y1="${y}" x2="${x+c*.34}" y2="${y+c*.34}" stroke="var(--ac)" stroke-width="2"/>`;
         s+=`<text x="${x+c-5}" y="${y+13}" text-anchor="end" font-size="9" font-family="ui-monospace,Menlo,monospace" fill="var(--ac)" font-weight="700">La</text>`;}
       (por[r]||[]).forEach((g,i)=>s+=`<text x="${x+c/2}" y="${y+30+i*17}" text-anchor="middle" font-size="14" fill="var(--ac)">${g.glifo}<title>${g.nombre} ${g.posicion||""}</title></text>`);}
-    s+=`<text x="${S/2}" y="${S+11}" text-anchor="middle" font-size="10" font-family="ui-monospace,Menlo,monospace" fill="currentColor" opacity=".55">${titulo} · sur · signos fijos</text>`;
+    s+=`<text x="${S/2}" y="${S+11}" text-anchor="middle" font-size="10" font-family="ui-monospace,Menlo,monospace" fill="currentColor" opacity=".55">${titulo} · ${t().sur} · ${t().surNota}</text>`;
   }else{const x0=P0,y0=P0,x1=P0+L,y1=P0+L,mx=(x0+x1)/2,my=(y0+y1)/2;
     s+=`<rect x="${x0}" y="${y0}" width="${L}" height="${L}" fill="var(--cas)" stroke="currentColor" stroke-width="1.4"/>`;
     s+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="currentColor" stroke-width="1.1"/><line x1="${x1}" y1="${y0}" x2="${x0}" y2="${y1}" stroke="currentColor" stroke-width="1.1"/>`;
@@ -108,42 +111,42 @@ function cuadroVed(grahas, lagnaRasi, titulo) {
       s+=`<text x="${cx}" y="${cy-13}" text-anchor="middle" font-size="9.5" font-family="ui-monospace,Menlo,monospace" fill="currentColor" opacity=".5">${r+1}</text>`;
       (por[r]||[]).forEach((g,i)=>{const n=(por[r]||[]).length,dx=n>1?((i%2)-.5)*20:0;
         s+=`<text x="${cx+dx}" y="${cy+4+Math.floor(i/2)*15}" text-anchor="middle" font-size="13.5" fill="var(--ac)">${g.glifo}<title>${g.nombre} ${g.posicion||""}</title></text>`;});}
-    s+=`<text x="${S/2}" y="${S+11}" text-anchor="middle" font-size="10" font-family="ui-monospace,Menlo,monospace" fill="currentColor" opacity=".55">${titulo} · norte · casa 1 arriba</text>`;}
+    s+=`<text x="${S/2}" y="${S+11}" text-anchor="middle" font-size="10" font-family="ui-monospace,Menlo,monospace" fill="currentColor" opacity=".55">${titulo} · ${t().norte} · ${t().norteNota}</text>`;}
   return s+"</svg>";
 }
 
 // ═══ tablas ═══
 function tablasOcc(c){const x=t();
-  const ang=["Ascendente","Descendente","Medio Cielo","Fondo del Cielo"];
+  const ang=[x.ang_asc,x.ang_dsc,x.ang_mc,x.ang_ic];
   let h=`<div class="caja"><h3>${x.angulos}</h3><table><tbody>`;
   c.angulos.forEach((l,i)=>{const s=Math.floor(l/30);
-    h+=`<tr><td>${ang[i]}</td><td class="num">${gms(l-s*30)}</td><td class="gl">${SIGW[s]}</td><td>${NOMW[s]}</td></tr>`;});
+    h+=`<tr><td>${ang[i]}</td><td class="num">${gms(l-s*30)}</td><td class="gl">${SIGW[s]}</td><td>${nom(s)}</td></tr>`;});
   h+=`</tbody></table></div><div class="caja"><h3>${x.planetas}</h3><table><thead><tr><th colspan="2">${x.planetas}</th><th class="num">${x.grados}</th><th colspan="2">${x.signo}</th><th class="num">${x.casa}</th></tr></thead><tbody>`;
-  c.cuerpos.forEach(p=>h+=`<tr><td class="gl">${p.glifo}</td><td>${p.nombre}${p.retro?' ℞':''}</td><td class="num">${gms(p.grado)}</td><td class="gl">${p.glifoSig}</td><td>${p.signo}</td><td class="num">${p.casaP}</td></tr>`);
+  c.cuerpos.forEach(p=>h+=`<tr><td class="gl">${p.glifo}</td><td>${cue(p.nombre)}${p.retro?' ℞':''}</td><td class="num">${gms(p.grado)}</td><td class="gl">${p.glifoSig}</td><td>${nom(p.signoIdx)}</td><td class="num">${p.casaP}</td></tr>`);
   h+=`</tbody></table></div><div class="caja"><h3>${x.aspectos}</h3><table><tbody>`;
-  c.aspectos.slice(0,14).forEach(a=>h+=`<tr><td>${a.a}</td><td class="gl">${a.glifo}</td><td>${a.nombre}</td><td>${a.b}</td><td class="num">${a.orbe.toFixed(2)}°</td></tr>`);
+  c.aspectos.slice(0,14).forEach(a=>h+=`<tr><td>${cue(a.a)}</td><td class="gl">${a.glifo}</td><td>${a.nombre}</td><td>${cue(a.b)}</td><td class="num">${a.orbe.toFixed(2)}°</td></tr>`);
   h+=`</tbody></table></div><div class="caja"><h3>${x.casas}</h3><table><thead><tr><th>${x.casa}</th><th>${x.signo}</th><th>${x.senor}</th><th>${x.alojado}</th></tr></thead><tbody>`;
   c.regentes.forEach((r,i)=>{const s=Math.floor(c.cuspP[i]/30);
-    h+=`<tr><td class="num">${i+1}</td><td class="gl">${SIGW[s]}</td><td>${r}</td><td>${x.casa} ${c.regenteEn[i]}</td></tr>`;});
+    h+=`<tr><td class="num">${i+1}</td><td class="gl">${SIGW[s]}</td><td>${cue(r)}</td><td>${x.casa} ${c.regenteEn[i]}</td></tr>`;});
   return h+`</tbody></table></div>`;}
 
 function tablasVed(c){const x=t();
   let h=`<div class="caja"><h3>${x.lagnaT}</h3><table><tbody>
     <tr><td>${x.lagnaT}</td><td>${c.lagnaPos}</td><td>${c.lagnaNak} · pada ${c.lagnaPada}</td></tr>
-    <tr><td>${x.senor}</td><td colspan="2">${c.senorLagna}</td></tr>
+    <tr><td>${x.senor}</td><td colspan="2">${cue(c.senorLagna)}</td></tr>
     <tr><td>ayanāṁśa</td><td colspan="2">${c.ayanamsa.toFixed(4)}°</td></tr></tbody></table></div>`;
   h+=`<div class="caja"><h3>${x.grahas}</h3><table><thead><tr><th colspan="2">${x.grahas}</th><th>${x.posicion}</th><th>${x.nak}</th><th class="num">${x.pada}</th><th class="num">${x.casa}</th><th>${x.estado}</th></tr></thead><tbody>`;
   c.grahas.forEach(g=>{const cl=g.dignidad==="exaltado"?"exalt":g.dignidad==="debilitado"?"debil":"";
     const marcas=[g.combusto?`<span class="debil" title="combusto: a ${g.delSol}° del Sol">☌sol</span>`:"",
       g.digBala?`<span class="exalt" title="fuerza direccional plena">dig</span>`:""].filter(Boolean).join(" ");
-    h+=`<tr><td class="gl">${g.glifo}</td><td>${g.nombre}${g.retro?' ℞':''}</td><td>${g.posicion}${g.gandanta?' <span class="gan" title="gaṇḍānta">⚠</span>':''}</td><td>${g.nak}</td><td class="num">${g.pada}</td><td class="num">${g.bhava}</td><td class="${cl}">${g.dignidad} ${marcas}</td></tr>`;});
-  h+=`</tbody></table></div><div class="caja"><h3>${x.bhavas}</h3><table><thead><tr><th class="num">${x.casa}</th><th>Rāśi</th><th>${x.senor}</th><th>${x.alojado}</th><th>${x.ocupan}</th><th>${x.aspectan}</th></tr></thead><tbody>`;
-  c.bhavas.forEach(b=>h+=`<tr><td class="num">${b.numero}</td><td>${b.rasi}</td><td>${b.senor}</td><td>${x.casa} ${b.senorEn}</td><td>${(b.ocupan||[]).join(" ")||"—"}</td><td style="color:var(--muted)">${(b.aspectan||[]).join(" ")||"—"}</td></tr>`);
+    h+=`<tr><td class="gl">${g.glifo}</td><td>${cue(g.nombre)}${g.retro?' ℞':''}</td><td>${g.posicion}${g.gandanta?' <span class="gan" title="gaṇḍānta">⚠</span>':''}</td><td>${g.nak}</td><td class="num">${g.pada}</td><td class="num">${g.bhava}</td><td class="${cl}">${g.dignidad} ${marcas}</td></tr>`;});
+  h+=`</tbody></table></div><div class="caja"><h3>${x.bhavas}</h3><table><thead><tr><th class="num">${x.casa}</th><th>${x.rasi}</th><th>${x.senor}</th><th>${x.alojado}</th><th>${x.ocupan}</th><th>${x.aspectan}</th></tr></thead><tbody>`;
+  c.bhavas.forEach(b=>h+=`<tr><td class="num">${b.numero}</td><td>${b.rasi}</td><td>${cue(b.senor)}</td><td>${x.casa} ${b.senorEn}</td><td>${(b.ocupan||[]).map(cue).join(" ")||"—"}</td><td style="color:var(--muted)">${(b.aspectan||[]).map(cue).join(" ")||"—"}</td></tr>`);
   h+=`</tbody></table></div><div class="caja"><h3>${x.karakas}</h3>
     ${c.karakamsa?`<p style="margin:0 0 8px;color:var(--muted);font-size:.85rem">Karakāṁśa — el Ātmakāraka cae en <b style="color:var(--ink)">${c.karakamsa}</b> en el navāṁśa. Se usa como tercer ascendente para el dharma.</p>`:""}
     <table><tbody>`;
   const kn={AK:"Ātmakāraka",AmK:"Amātyakāraka",BK:"Bhrātṛkāraka",MK:"Mātṛkāraka",PiK:"Pitṛkāraka",PK:"Putrakāraka",GK:"Ñātikāraka"};
-  Object.keys(kn).forEach(k=>h+=`<tr><td><b>${k}</b></td><td>${c.karakas[k]||"—"}</td><td style="color:var(--muted)">${kn[k]}</td></tr>`);
+  Object.keys(kn).forEach(k=>h+=`<tr><td><b>${k}</b></td><td>${cue(c.karakas[k]||"—")}</td><td style="color:var(--muted)">${kn[k]}</td></tr>`);
   h+=`</tbody></table></div>`;
   if(c.yogas&&c.yogas.length){h+=`<div class="caja"><h3>${x.yogas}</h3>`;c.yogas.forEach(y=>h+=`<p class="yoga">${y}</p>`);h+=`</div>`;}
   return h;}
@@ -173,24 +176,22 @@ async function leer(){const L=await (await fetch("/api/lectura?"+params())).json
     L.contradicciones.forEach(x=>h+=`<p style="margin:0 0 9px">${x}</p>`);h+=`</div>`;}
   $("#lec").innerHTML=h+`<div class="aviso">${L.nota}</div>`;}
 
-function pintarVargas(c){const d={D1:"la vida tal como se vive",D2:"riqueza y sustento",D3:"hermanos y coraje",
-  D7:"hijos",D9:"el alma y el cónyuge",D10:"profesión",D12:"los padres",D16:"vehículos y confort",
-  D30:"males",D60:"karma acumulado"};
+function pintarVargas(c){const x=t(); const d=k=>x["v_"+k]||"";
   $("#vg").innerHTML=Object.keys(c.vargas).map(k=>{const gs=c.vargas[k],lg=gs.find(g=>g.nombre==="Lagna");
-    return `<div class="vg"><h4>${k}</h4><p>${d[k]||""}</p>${cuadroVed(gs.filter(g=>g.nombre!=="Lagna"),lg?lg.rasiIdx:0,k)}</div>`;}).join("");}
+    return `<div class="vg"><h4>${k}</h4><p>${d(k)}</p>${cuadroVed(gs.filter(g=>g.nombre!=="Lagna"),lg?lg.rasiIdx:0,k)}</div>`;}).join("");}
 function pintarGocara(c){const g=c.gocara;if(!g)return "";
-  let h=`<div class="caja"><h3>Sade Sati</h3>`;
+  let h=`<div class="caja"><h3>${t().sadeTit}</h3>`;
   h+=g.sade.activo
-    ? `<p class="yoga"><b>Activo — fase ${g.sade.fase}.</b> ${g.sade.nota}${g.sade.hasta?` Sale hacia <b>${g.sade.hasta}</b>.`:""}</p>`
-    : `<p style="margin:0;color:var(--muted)">${g.sade.nota}${g.sade.desde?` El próximo empieza hacia <b style="color:var(--ink)">${g.sade.desde}</b>.`:""}</p>`;
-  h+=`</div><div class="caja"><h3>Tránsitos de hoy · ${g.fecha}</h3><table>
-    <thead><tr><th colspan="2">Graha</th><th>Posición</th><th class="num">desde Lagna</th><th class="num">desde Luna</th></tr></thead><tbody>`;
-  g.transitos.forEach(t=>h+=`<tr><td class="gl">${t.glifo}</td><td>${t.graha}${t.retro?' ℞':''}</td><td>${t.posicion}</td><td class="num">${t.desdeLagna}</td><td class="num">${t.desdeLuna}</td></tr>`);
+    ? `<p class="yoga"><b>${t().sadeAct.replace("{f}",g.sade.fase)}</b> ${g.sade.nota}${g.sade.hasta?t().sadeSale.replace("{d}","<b>"+g.sade.hasta+"</b>"):""}</p>`
+    : `<p style="margin:0;color:var(--muted)">${g.sade.nota}${g.sade.desde?t().sadeProx.replace("{d}","<b style=\"color:var(--ink)\">"+g.sade.desde+"</b>"):""}</p>`;
+  h+=`</div><div class="caja"><h3>${t().transitos.replace("{f}",g.fecha)}</h3><table>
+    <thead><tr><th colspan="2">${t().graha}</th><th>${t().posicion}</th><th class="num">${t().desdeLagna}</th><th class="num">${t().desdeLuna}</th></tr></thead><tbody>`;
+  g.transitos.forEach(t=>h+=`<tr><td class="gl">${t.glifo}</td><td>${cue(t.graha)}${t.retro?' ℞':''}</td><td>${t.posicion}</td><td class="num">${t.desdeLagna}</td><td class="num">${t.desdeLuna}</td></tr>`);
   return h+`</tbody></table></div>`;}
 
-function pintarDasas(c){let h=`<div class="caja"><h3>Vimśottarī</h3><div class="dasa">`;
-  c.dasas.forEach(p=>{h+=`<div class="p ${p.actual?'act':''}"><span>${p.senor}</span><span>${p.desde} → ${p.hasta}</span><span>${p.anios}</span></div>`;
-    if(p.actual&&p.sub)p.sub.forEach(b=>h+=`<div class="p b ${b.actual?'act':''}"><span>${b.senor}</span><span>${b.desde} → ${b.hasta}</span><span>${b.anios}</span></div>`);});
+function pintarDasas(c){let h=`<div class="caja"><h3>${t().vimsottari}</h3><div class="dasa">`;
+  c.dasas.forEach(p=>{h+=`<div class="p ${p.actual?'act':''}"><span>${cue(p.senor)}</span><span>${p.desde} → ${p.hasta}</span><span>${p.anios}</span></div>`;
+    if(p.actual&&p.sub)p.sub.forEach(b=>h+=`<div class="p b ${b.actual?'act':''}"><span>${cue(b.senor)}</span><span>${b.desde} → ${b.hasta}</span><span>${b.anios}</span></div>`);});
   $("#ds").innerHTML=h+`</div></div>`+pintarGocara(c);}
 
 // ═══ comparación: la única pantalla con las dos ═══
@@ -199,14 +200,15 @@ async function comparar(){const x=t();
   let h=`<div class="caja"><h3>${x.compTit}</h3><p style="margin:0 0 12px;color:var(--muted)">${x.compTxt}</p>
     <p style="margin:0 0 14px"><b>ayanāṁśa ${d.ayanamsa.toFixed(4)}°</b> — ésa es toda la diferencia entre las dos columnas.</p>
     <table><thead><tr><th colspan="2"></th><th>${x.tropical}</th><th>${x.sidereo}</th><th></th></tr></thead><tbody>
-    <tr><td></td><td><b>Asc / Lagna</b></td><td>${d.ascendente}</td><td>${d.lagna}</td><td class="cambia">${d.cambiaLagna?x.cambia:""}</td></tr>`;
-  d.filas.forEach(f=>h+=`<tr><td class="gl">${f.glifo}</td><td>${f.cuerpo}</td><td>${f.tropical}</td><td>${f.sidereo}</td><td class="cambia">${f.cambia?x.cambia:""}</td></tr>`);
+    <tr><td></td><td><b>${x.ang_asc} / ${x.lagnaT}</b></td><td>${gms(d.ascGr)} ${nom(d.ascIdx)}</td><td>${gms(d.lagGr)} ${RASIS[d.lagIdx]}</td><td class="cambia">${d.cambiaLagna?x.cambia:""}</td></tr>`;
+  d.filas.forEach(f=>h+=`<tr><td class="gl">${f.glifo}</td><td>${cue(f.cuerpo)}</td><td>${gms(f.tropGr)} ${nom(f.tropIdx)}</td><td>${gms(f.sidGr)} ${RASIS[f.sidIdx]}</td><td class="cambia">${f.cambia?x.cambia:""}</td></tr>`);
   $("#cmp").innerHTML=h+`</tbody></table></div>`;}
 
 // ═══ curso ═══
 function pintarCurso(){const x=t();
-  $("#lista").innerHTML=CURSOS[TRAD].map(([f,ti,n])=>
-    `<a href="#" data-f="${f}"><b>${n?(n==="·"?"Extra":x.modulo+" "+n):x.indice}</b>${ti}</a>`).join("");
+  const nota = LANG === "en" ? `<p style="grid-column:1/-1;margin:0 0 6px;color:var(--muted);font-size:.85rem">${x.cursoSoloEs}</p>` : "";
+  $("#lista").innerHTML=nota+CURSOS[TRAD].map(([f,ti,n])=>
+    `<a href="#" data-f="${f}"><b>${n?(n==="·"?x.extra:x.modulo+" "+n):x.indice}</b>${ti}</a>`).join("");
   $("#lista").onclick=async ev=>{const a=ev.target.closest("a");if(!a)return;ev.preventDefault();
     const md=await (await fetch(`curso/${TRAD}/${a.dataset.f}.md`)).text();
     $("#texto").hidden=false;$("#texto").innerHTML=markdown(md);
@@ -246,8 +248,8 @@ function pintarEjercicio(){const x=t();
     const r=await (await fetch("/api/verificar?"+params()+"&"+ex)).json();
     let h="";r.pasos.forEach(p=>h+=`<div class="paso"><span>${p.nombre}</span><span class="${p.bien?'bien':'malo'}">${p.bien?"✓":"✗"}</span><span style="color:var(--muted)">${p.tuyo}</span><span class="${p.bien?'bien':'malo'}">${p.bien?"":"±"+p.desvio+" "+p.unidad}</span></div>`);
     if(r.primerFallo>=0){const p=r.pasos[r.primerFallo];
-      h+=`<div class="aviso"><b>${p.nombre}.</b> ±${p.desvio} ${p.unidad} — ${p.comentario}. Rehaz desde ahí.</div>`;}
-    else h+=`<div class="aviso" style="border-color:var(--ok)"><b>Los cinco pasos correctos.</b></div>`;
+      h+=`<div class="aviso"><b>${p.nombre}.</b> ±${p.desvio} ${p.unidad} — ${p.comentario}. ${t().ejRehaz}</div>`;}
+    else h+=`<div class="aviso" style="border-color:var(--ok)"><b>${t().ejOk}</b></div>`;
     $("#res").innerHTML=h;};}
 
 // ═══ ciudades, husos, guardadas ═══
@@ -260,7 +262,7 @@ async function resolverHuso(){const z=$("#zona").value;if(!z)return;
   const [a,m,d]=$("#fecha").value.split("-"),[hh,mm]=$("#hora").value.split(":");
   const r=await (await fetch(`/api/huso?zona=${encodeURIComponent(z)}&anio=${+a}&mes=${+m}&dia=${+d}&hh=${+hh}&mm=${+mm}`)).json();
   if(r.error)return;$("#tz").value=r.offset;
-  $("#husoTxt").innerHTML=`UTC${r.offset>=0?"+":""}${r.offset} · ${r.zona}`+(r.verano?` · <b style="color:var(--ac)">horario de verano</b>`:``);}
+  $("#husoTxt").innerHTML=`UTC${r.offset>=0?"+":""}${r.offset} · ${r.zona}`+(r.verano?`+" · "+`<b style="color:var(--ac)">${t().verano}</b>`:" · "+t().estandar);}
 $("#ciudad").oninput=buscarCiudad;
 $("#sug").onclick=async ev=>{const b=ev.target.closest("button");if(!b)return;
   const l=JSON.parse($("#sug").dataset.datos)[+b.dataset.i];
@@ -273,26 +275,27 @@ $("#porque").onclick=async()=>{const c=$("#hist");
   const h=await (await fetch(`/api/husohistoria?zona=${encodeURIComponent($("#zona").value)}&anio=${+a}&mes=${+m}&dia=${+d}&hh=${+hh}&mm=${+mm}&lon=${$("#lon").value}`)).json();
   if(h.error){c.innerHTML=h.error;c.hidden=false;return;}
   const sg=n=>(n>=0?"+":"")+(Math.round(n*100)/100);
-  let x=`<h4>De dónde sale UTC${sg(h.offset)}</h4><div class="fila">zona · <b>${h.zona}</b> (${h.abrev})</div>
-    <div class="fila">estándar del año · <b>UTC${sg(h.estandar)}</b></div>
-    <div class="fila">horario de verano · <b>${h.verano?"sí, +1 h":"no"}</b></div>
-    <div class="sec"><h4>El reloj frente al Sol</h4>
-    <div class="fila">por longitud le tocaría · UTC${sg(h.solar)}</div>
-    <div class="fila">el reloj va <b>${sg(h.desfase)} h</b> respecto al Sol</div></div>`;
-  x+=`<div class="sec"><h4>Horario de verano en ${a}</h4>`+
-    (h.delAnio.length?h.delAnio.map(v=>`<div class="fila">${v.fecha} · UTC${sg(v.de)} → <b>UTC${sg(v.a)}</b> — ${v.motivo}</div>`).join(""):`<div class="fila">ese año no hubo cambios</div>`)+`</div>`;
-  if(h.historicos.length)x+=`<div class="sec"><h4>Cambios de huso del país</h4>`+h.historicos.map(v=>`<div class="fila">${v.fecha} · UTC${sg(v.de)} → <b>UTC${sg(v.a)}</b></div>`).join("")+`</div>`;
+  const L=t();
+  let x=`<h4>${L.hDe.replace("{o}",sg(h.offset))}</h4><div class="fila">${L.hZona} · <b>${h.zona}</b> (${h.abrev})</div>
+    <div class="fila">${L.hEstandar} · <b>UTC${sg(h.estandar)}</b></div>
+    <div class="fila">${L.hVerano} · <b>${h.verano?L.hSi:L.hNo}</b></div>
+    <div class="sec"><h4>${L.hRelojSol}</h4>
+    <div class="fila">${L.hTocaria} · UTC${sg(h.solar)}</div>
+    <div class="fila">${L.hVa.replace("{d}","<b>"+sg(h.desfase)+"</b>")}</div></div>`;
+  x+=`<div class="sec"><h4>${L.hDstAnio.replace("{a}",a)}</h4>`+
+    (h.delAnio.length?h.delAnio.map(v=>`<div class="fila">${v.fecha} · UTC${sg(v.de)} → <b>UTC${sg(v.a)}</b> — ${v.motivo}</div>`).join(""):`<div class="fila">${L.hSinDst}</div>`)+`</div>`;
+  if(h.historicos.length)x+=`<div class="sec"><h4>${L.hCambios}</h4>`+h.historicos.map(v=>`<div class="fila">${v.fecha} · UTC${sg(v.de)} → <b>UTC${sg(v.a)}</b></div>`).join("")+`</div>`;
   c.innerHTML=x;c.hidden=false;};
 async function pintarGuardadas(d){d=d||await (await fetch("/api/guardadas")).json();const c=d.cartas||[];
-  $("#guardadas").innerHTML=c.length?`<span class="et">Guardadas</span>`+c.map(v=>`<span class="chip"><button class="abrir" data-id="${v.id}">${v.nombre}<small>${v.ciudad}</small></button><button class="x" data-del="${v.id}">×</button></span>`).join(""):"";
+  $("#guardadas").innerHTML=c.length?`<span class="et">${t().guardadas}</span>`+c.map(v=>`<span class="chip"><button class="abrir" data-id="${v.id}">${v.nombre}<small>${v.ciudad}</small></button><button class="x" data-del="${v.id}">×</button></span>`).join(""):"";
   $("#guardadas").dataset.datos=JSON.stringify(c);}
-$("#guardar").onclick=async()=>{const n=prompt("Nombre",$("#ciudad").value||"Carta");if(!n)return;
+$("#guardar").onclick=async()=>{const n=prompt(t().nombrePrompt,$("#ciudad").value||"Carta");if(!n)return;
   pintarGuardadas(await (await fetch("/api/guardadas",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({nombre:n,ciudad:$("#ciudad").value,zona:$("#zona").value,fecha:$("#fecha").value,
     hora:$("#hora").value,tz:+$("#tz").value,lat:+$("#lat").value,lon:+$("#lon").value})})).json());};
 $("#guardadas").onclick=async ev=>{const del=ev.target.closest("[data-del]");
   if(del){const c=JSON.parse($("#guardadas").dataset.datos).find(x=>x.id===del.dataset.del);
-    if(!confirm(`¿Borrar «${c.nombre}»?`))return;
+    if(!confirm(t().borrar.replace("{n}",c.nombre)))return;
     pintarGuardadas(await (await fetch("/api/guardadas?id="+del.dataset.del,{method:"DELETE"})).json());return;}
   const ab=ev.target.closest("[data-id]");if(!ab)return;
   const c=JSON.parse($("#guardadas").dataset.datos).find(x=>x.id===ab.dataset.id);

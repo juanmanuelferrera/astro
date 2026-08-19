@@ -147,12 +147,16 @@ func apiComparar(w http.ResponseWriter, r *http.Request) {
 	occ := efem.Calcular(a, m, d, h, mi, tz, lat, lo)
 	ved := jyotisha.Calcular(a, m, d, h, mi, tz, lat, lo)
 
+	// Se mandan indices y grados, no cadenas ya compuestas: el nombre del signo
+	// depende del idioma y lo pone el navegador.
 	type fila struct {
-		Cuerpo   string `json:"cuerpo"`
-		Glifo    string `json:"glifo"`
-		Tropical string `json:"tropical"`
-		Sidereo  string `json:"sidereo"`
-		Cambia   bool   `json:"cambia"`
+		Cuerpo   string  `json:"cuerpo"`
+		Glifo    string  `json:"glifo"`
+		TropIdx  int     `json:"tropIdx"`
+		TropGr   float64 `json:"tropGr"`
+		SidIdx   int     `json:"sidIdx"`
+		SidGr    float64 `json:"sidGr"`
+		Cambia   bool    `json:"cambia"`
 	}
 	var filas []fila
 	ved2 := map[string]jyotisha.Graha{}
@@ -170,14 +174,16 @@ func apiComparar(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		filas = append(filas, fila{Cuerpo: n, Glifo: v.Glifo,
-			Tropical: fmt.Sprintf("%d°%02d′ %s", int(c.Grado),
-				int(math.Round((c.Grado-math.Floor(c.Grado))*60)), c.Signo),
-			Sidereo: v.Posicion, Cambia: c.Signo != jyotisha.RasisEs[v.RasiIdx]})
+			TropIdx: c.SignoIdx, TropGr: c.Grado,
+			SidIdx: v.RasiIdx, SidGr: v.Grado,
+			Cambia: c.Signo != jyotisha.RasisEs[v.RasiIdx]})
 	}
 	jsonOut(w, map[string]any{
 		"ayanamsa":     ved.Ayanamsa,
-		"ascendente":   fmt.Sprintf("%d°%02d′ %s", int(math.Mod(occ.Asc, 30)), int(math.Round((math.Mod(occ.Asc, 30)-math.Floor(math.Mod(occ.Asc, 30)))*60)), efem.Signos[int(occ.Asc/30)]),
-		"lagna":        ved.LagnaPos,
+		"ascIdx":       int(occ.Asc / 30),
+		"ascGr":        math.Mod(occ.Asc, 30),
+		"lagIdx":       ved.LagnaRasi,
+		"lagGr":        math.Mod(ved.Lagna, 30),
 		"cambiaLagna":  efem.Signos[int(occ.Asc/30)] != jyotisha.RasisEs[ved.LagnaRasi],
 		"filas":        filas,
 	})

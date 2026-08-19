@@ -1,5 +1,21 @@
 // Cadenas de interfaz. El vocabulario depende de la TRADICIÓN, no solo del idioma:
 // en modo védico no aparece la palabra "Ascendente" en ninguna parte, y viceversa.
+const SIGNOS = {
+  es: ["Aries","Tauro","Géminis","Cáncer","Leo","Virgo","Libra","Escorpio","Sagitario","Capricornio","Acuario","Piscis"],
+  en: ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"],
+};
+// Los rāśis no se traducen: son los nombres que se usan en cualquier idioma.
+const RASIS = ["Meṣa","Vṛṣabha","Mithuna","Karka","Siṁha","Kanyā","Tulā","Vṛścika","Dhanus","Makara","Kumbha","Mīna"];
+
+// Nombres de los cuerpos. Rāhu y Ketu no se traducen: no tienen equivalente.
+const CUERPOS = {
+  es: {}, // el servidor ya los manda en español
+  en: {"Sol":"Sun","Luna":"Moon","Mercurio":"Mercury","Venus":"Venus","Marte":"Mars",
+       "Júpiter":"Jupiter","Saturno":"Saturn","Urano":"Uranus","Neptuno":"Neptune",
+       "Plutón":"Pluto","Nodo Norte":"North Node","Nodo Sur":"South Node",
+       "Rāhu":"Rāhu","Ketu":"Ketu","Lagna":"Lagna"},
+};
+
 const T = {
   es: {
     titulo: "Astro", lead_occidental: "Carta natal occidental, zodíaco tropical con casas de Plácido.",
@@ -21,6 +37,26 @@ const T = {
     ejTit: "Corrección del cálculo a mano",
     ejTxt: "Levanta la carta con lápiz y efemérides. Escribe aquí lo que te haya salido y te digo en qué paso te desviaste — no el resultado bueno.",
     comprobar: "Comprobar", modulo: "Módulo", indice: "Índice",
+    trad_occidental: "Occidental", trad_jyotisha: "Jyotiṣa",
+    norte: "Norte de la India", sur: "Sur de la India",
+    norteNota: "casa 1 arriba", surNota: "signos fijos",
+    guardadas: "Guardadas", nombrePrompt: "Nombre", borrar: "¿Borrar «{n}»?",
+    ang_asc: "Ascendente", ang_dsc: "Descendente", ang_mc: "Medio Cielo", ang_ic: "Fondo del Cielo",
+    rasi: "Rāśi", extra: "Extra", vimsottari: "Vimśottarī",
+    sadeTit: "Sade Sati", sadeAct: "Activo — fase {f}.", sadeSale: " Sale hacia {d}.",
+    sadeProx: " El próximo empieza hacia {d}.",
+    transitos: "Tránsitos de hoy · {f}", desdeLagna: "desde Lagna", desdeLuna: "desde Luna",
+    graha: "Graha", verano: "horario de verano", estandar: "horario estándar",
+    hDe: "De dónde sale UTC{o}", hZona: "zona", hEstandar: "estándar del año",
+    hVerano: "horario de verano", hSi: "sí, +1 h", hNo: "no",
+    hRelojSol: "El reloj frente al Sol", hTocaria: "por longitud le tocaría",
+    hVa: "el reloj va {d} h respecto al Sol", hDstAnio: "Horario de verano en {a}",
+    hSinDst: "ese año no hubo cambios", hCambios: "Cambios de huso del país",
+    ejOk: "Los cinco pasos correctos.", ejRehaz: "Rehaz desde ahí.",
+    v_D1:"la vida tal como se vive", v_D2:"riqueza y sustento", v_D3:"hermanos y coraje",
+    v_D7:"hijos", v_D9:"el alma y el cónyuge", v_D10:"profesión", v_D12:"los padres",
+    v_D16:"vehículos y confort", v_D30:"males", v_D60:"karma acumulado",
+    cursoSoloEs: "Los módulos del curso están por ahora solo en español.",
     pie: "Motor astronómico propio en Go, sin dependencias. Verificado contra Swiss Ephemeris. " +
          "Lugares de GeoNames (CC BY 4.0). Husos de la base IANA.",
   },
@@ -44,6 +80,26 @@ const T = {
     ejTit: "Checking your hand calculation",
     ejTxt: "Cast the chart with pencil and ephemeris. Type what you got and I will tell you which step went wrong — not the right answer.",
     comprobar: "Check", modulo: "Module", indice: "Index",
+    trad_occidental: "Western", trad_jyotisha: "Jyotiṣa",
+    norte: "North Indian", sur: "South Indian",
+    norteNota: "house 1 on top", surNota: "fixed signs",
+    guardadas: "Saved", nombrePrompt: "Name", borrar: "Delete “{n}”?",
+    ang_asc: "Ascendant", ang_dsc: "Descendant", ang_mc: "Midheaven", ang_ic: "Imum Coeli",
+    rasi: "Rāśi", extra: "Extra", vimsottari: "Vimśottarī",
+    sadeTit: "Sade Sati", sadeAct: "Active — {f} phase.", sadeSale: " Ends around {d}.",
+    sadeProx: " The next one begins around {d}.",
+    transitos: "Transits today · {f}", desdeLagna: "from Lagna", desdeLuna: "from Moon",
+    graha: "Graha", verano: "daylight saving", estandar: "standard time",
+    hDe: "Where UTC{o} comes from", hZona: "zone", hEstandar: "standard for that year",
+    hVerano: "daylight saving", hSi: "yes, +1 h", hNo: "no",
+    hRelojSol: "The clock against the Sun", hTocaria: "longitude would give",
+    hVa: "the clock runs {d} h against the local Sun", hDstAnio: "Daylight saving in {a}",
+    hSinDst: "no clock changes that year", hCambios: "Country-wide offset changes",
+    ejOk: "All five steps correct.", ejRehaz: "Redo from there.",
+    v_D1:"life as it is lived", v_D2:"wealth and sustenance", v_D3:"siblings and courage",
+    v_D7:"children", v_D9:"the soul and the spouse", v_D10:"profession", v_D12:"the parents",
+    v_D16:"vehicles and comfort", v_D30:"misfortunes", v_D60:"accumulated karma",
+    cursoSoloEs: "The course modules are in Spanish for now.",
     pie: "Own astronomical engine in Go, no dependencies. Verified against Swiss Ephemeris. " +
          "Places from GeoNames (CC BY 4.0). Time zones from the IANA database.",
   }
