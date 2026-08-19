@@ -1,7 +1,7 @@
-# Curso de Astrología
+# Astro
 
-Curso de astrología occidental con calculadora de cartas natales. Un único binario:
-sin Python, sin red, sin instalar nada.
+Cartas natales y curso en **dos tradiciones** —occidental y jyotiṣa— y **dos idiomas**,
+en un único binario: sin Python, sin red, sin instalar nada.
 
 ```
 ./astro
@@ -9,14 +9,24 @@ sin Python, sin red, sin instalar nada.
 
 Abre el navegador en `http://localhost:8733`.
 
-## Qué hace
+## Las dos tradiciones
 
-- **Carta natal** — rueda dibujada, ángulos, planetas, aspectos por exactitud y regentes de casa.
-- **Lectura** — traducción literal por el Sistema de Palabras Clave de Margaret Hone, agrupada
-  por categorías, con las contradicciones señaladas. No sintetiza: eso es del que lee.
-- **Curso** — los catorce módulos más la vía corta y el plan de una semana.
-- **Cálculo a mano** — corrige paso a paso el levantamiento manual de una carta y dice en cuál
-  te desviaste, sin dar el resultado bueno.
+Un selector arriba cambia **todo**: el cálculo, el vocabulario, el dibujo y el curso. Nunca se
+mezclan en pantalla — salvo en la pestaña **Comparar**, que existe justamente para enseñar por
+qué el mismo nacimiento da signos distintos en cada sistema.
+
+**Occidental** — zodíaco tropical, casas de Plácido y casas iguales en paralelo, aspectos por
+grados con orbes, rueda circular. Lectura por el Sistema de Palabras Clave de Margaret Hone, con
+las contradicciones señaladas. Corrector del cálculo a mano paso a paso. Curso de 14 módulos más
+la vía corta y el plan de una semana.
+
+**Jyotiṣa** — zodíaco sidéreo con ayanāṁśa Lahiri, bhāvas de signo entero, 27 nakṣatras con pada
+y señor, dṛṣṭi por signo, dignidades védicas con grados exactos, diez vargas dibujadas, daśās
+vimśottarī con bhuktis, kārakas de Jaimini y detección de yogas. Carta cuadrada en los dos
+estilos, norte y sur de la India. Curso de 16 módulos.
+
+Comparten el buscador de 41.451 lugares, los husos históricos, el guardado de cartas y la
+impresión a PDF.
 
 ## Opciones
 
@@ -51,6 +61,8 @@ avisando.
 ```
 go build -o astro .
 ```
+
+El binario sirve las dos tradiciones y los dos idiomas.
 
 Sin dependencias externas. Para las demás plataformas:
 

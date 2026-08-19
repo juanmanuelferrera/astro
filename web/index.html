@@ -1,0 +1,173 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astro</title>
+<style>
+:root{--ground:#f5f6f8;--panel:#fff;--ink:#14161c;--muted:#5b6470;--rule:#dadee5;
+--ac:#9c6512;--fr:#1f5c7d;--ok:#2c6e4a;--mal:#a33a2a;--cas:#f4efe6}
+:root[data-trad="jyotisha"]{--ground:#faf7f2;--panel:#fff;--ink:#1a1611;--muted:#6b6255;
+--rule:#e0d8cb;--ac:#9a5b1e;--cas:#f4efe6}
+@media(prefers-color-scheme:dark){:root{--ground:#0e1117;--panel:#151a22;--ink:#e5e8ee;
+--muted:#98a2b1;--rule:#28303b;--ac:#e0a751;--fr:#71b6da;--ok:#6cc08e;--mal:#e08272;--cas:#1b2029}
+:root[data-trad="jyotisha"]{--ground:#131110;--panel:#1c1917;--ink:#ece6dc;--muted:#9d9285;
+--rule:#332e28;--ac:#d99648;--cas:#221e1a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+font-family:Charter,Georgia,"Times New Roman",serif;font-size:16px;line-height:1.6}
+.wrap{max-width:1020px;margin:0 auto;padding:26px 20px 80px}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+h1{font-size:1.8rem;margin:0;font-weight:600;letter-spacing:-.015em}
+.selector{display:flex;border:1px solid var(--rule);border-radius:20px;overflow:hidden;background:var(--panel)}
+.selector button{background:none;border:0;font:inherit;font-size:.85rem;padding:6px 16px;
+color:var(--muted);cursor:pointer}
+.selector button.on{background:var(--ac);color:#fff;font-weight:600}
+.idioma{margin-left:auto;display:flex;gap:4px}
+.idioma button{background:none;border:1px solid var(--rule);border-radius:3px;color:var(--muted);
+font:inherit;font-size:.72rem;padding:3px 9px;cursor:pointer;font-family:ui-monospace,Menlo,monospace}
+.idioma button.on{border-color:var(--ac);color:var(--ac)}
+.lead{color:var(--muted);margin:0 0 20px;font-size:.95rem}
+nav{display:flex;gap:5px;border-bottom:1px solid var(--rule);margin-bottom:22px;flex-wrap:wrap}
+nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);
+padding:9px 13px;font:inherit;font-size:.9rem;cursor:pointer}
+nav button.on{color:var(--ink);border-bottom-color:var(--ac)}
+nav button.imp{margin-left:auto;border:1px solid var(--rule);border-radius:3px;padding:6px 12px;
+font-size:.8rem;align-self:center;margin-bottom:6px}
+section{display:none}section.on{display:block}
+form{display:flex;flex-wrap:wrap;gap:11px;align-items:end;background:var(--panel);
+border:1px solid var(--rule);border-radius:4px;padding:15px;margin-bottom:18px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.68rem;letter-spacing:.1em;
+text-transform:uppercase;color:var(--muted);font-family:ui-monospace,Menlo,monospace;position:relative}
+input{font:inherit;font-size:.93rem;padding:6px 9px;border:1px solid var(--rule);border-radius:3px;
+background:var(--ground);color:var(--ink);width:108px;font-family:ui-monospace,Menlo,monospace}
+input.w{width:168px}
+button.go{background:var(--ac);color:#fff;border:0;border-radius:3px;padding:9px 19px;font:inherit;
+font-weight:600;cursor:pointer}
+button.go.sec{background:none;color:var(--ac);border:1px solid var(--ac)}
+.sug{position:absolute;top:100%;left:0;z-index:9;background:var(--panel);border:1px solid var(--rule);
+border-radius:3px;min-width:240px;max-width:340px;max-height:250px;overflow:auto;box-shadow:0 6px 20px rgba(0,0,0,.14)}
+.sug:empty{display:none}
+.sug button{display:flex;justify-content:space-between;gap:14px;width:100%;background:none;border:0;
+border-bottom:1px solid var(--rule);padding:7px 11px;font:inherit;font-size:.84rem;color:var(--ink);
+cursor:pointer;text-align:left;text-transform:none;letter-spacing:0}
+.sug button:hover{background:var(--ground)}.sug span{color:var(--muted);font-size:.74rem}
+.huso{flex-basis:100%;font-family:ui-monospace,Menlo,monospace;font-size:.75rem;color:var(--muted);
+border-top:1px solid var(--rule);padding-top:9px}
+.lnk{background:none;border:0;color:var(--ac);font:inherit;font-size:.75rem;cursor:pointer;
+text-decoration:underline;padding-left:8px;font-family:ui-monospace,Menlo,monospace}
+.hist{flex-basis:100%;background:var(--ground);border:1px solid var(--rule);border-radius:3px;
+padding:13px 15px;font-size:.86rem;color:var(--muted);line-height:1.55}
+.hist h4{margin:0 0 5px;font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;font-weight:600}
+.hist b{color:var(--ink)}.hist .fila{font-family:ui-monospace,Menlo,monospace;font-size:.77rem;padding:2px 0}
+.hist .sec{margin-top:12px}
+.cols{display:grid;grid-template-columns:minmax(300px,430px) 1fr;gap:20px;align-items:start}
+@media(max-width:830px){.cols{grid-template-columns:1fr}}
+svg{max-width:100%;height:auto;color:var(--ink)}
+.caja{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:13px;
+margin-bottom:13px;overflow-x:auto}
+.caja h3{margin:0 0 8px;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;
+color:var(--muted);font-weight:600}
+.estilos{display:flex;gap:5px;margin-bottom:9px}
+.estilos button{background:none;border:1px solid var(--rule);border-radius:3px;color:var(--muted);
+font:inherit;font-size:.73rem;padding:3px 10px;cursor:pointer;font-family:ui-monospace,Menlo,monospace}
+.estilos button.on{border-color:var(--ac);color:var(--ac)}
+table{border-collapse:collapse;width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.75rem;
+font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.gl{font-size:1.12rem;color:var(--ac);line-height:1}.num{text-align:right}
+.exalt{color:var(--ok);font-weight:600}.debil{color:var(--mal);font-weight:600}.gan{color:var(--mal)}
+.cambia{color:var(--ac);font-weight:600}
+.vargas{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:11px}
+.vg{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:9px}
+.vg h4{margin:0 0 2px;font-size:.78rem;font-weight:600}
+.vg p{margin:0 0 6px;font-size:.7rem;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.dasa{font-family:ui-monospace,Menlo,monospace;font-size:.79rem}
+.dasa .p{display:grid;grid-template-columns:88px 1fr auto;gap:10px;padding:4px 0;border-bottom:1px solid var(--rule)}
+.dasa .act{color:var(--ac);font-weight:700}.dasa .b{padding-left:20px;font-size:.73rem;color:var(--muted)}
+.yoga,.aviso{border-left:2px solid var(--ac);padding:3px 0 3px 13px;margin-bottom:9px;font-size:.92rem;color:var(--muted)}
+.aviso b{color:var(--ink)}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:8px}
+.mods a{display:block;padding:10px 12px;background:var(--panel);border:1px solid var(--rule);
+border-radius:3px;color:var(--ink);text-decoration:none;font-size:.89rem}
+.mods a:hover{border-color:var(--ac)}
+.mods b{display:block;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+font-family:ui-monospace,Menlo,monospace;font-weight:600}
+.mods a.comp{border-style:dashed}
+#texto{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:22px 26px;margin-top:15px}
+#texto h1{font-size:1.35rem}#texto h2{font-size:1.08rem;margin-top:22px}
+#texto table{font-size:.81rem;margin:10px 0}
+#texto blockquote{border-left:2px solid var(--ac);margin:12px 0;padding-left:14px;color:var(--muted)}
+#texto code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:var(--ground);padding:1px 5px;border-radius:3px}
+.guard{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:15px;align-items:center}
+.guard:empty{display:none}
+.guard .et{font-family:ui-monospace,Menlo,monospace;font-size:.65rem;letter-spacing:.11em;
+text-transform:uppercase;color:var(--muted)}
+.chip{display:inline-flex;border:1px solid var(--rule);border-radius:14px;background:var(--panel);overflow:hidden}
+.chip .abrir{background:none;border:0;font:inherit;font-size:.82rem;color:var(--ink);cursor:pointer;padding:5px 4px 5px 13px}
+.chip small{color:var(--muted);font-family:ui-monospace,Menlo,monospace;font-size:.67rem;padding-left:6px}
+.chip .x{background:none;border:0;color:var(--muted);cursor:pointer;padding:5px 10px 6px 8px;font-size:.95rem}
+.chip .x:hover{color:var(--mal)}
+.ficha{display:none;margin-bottom:13px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.ficha h2{margin:0 0 3px;font-size:1.12rem}
+.ficha p{margin:0;font-family:ui-monospace,Menlo,monospace;font-size:.76rem;color:var(--muted)}
+.paso{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:7px 0;
+border-bottom:1px solid var(--rule);font-family:ui-monospace,Menlo,monospace;font-size:.79rem}
+.bien{color:var(--ok)}.malo{color:var(--mal);font-weight:600}
+footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--rule);color:var(--muted);font-size:.8rem}
+@media print{
+ :root{--ground:#fff;--panel:#fff;--ink:#111;--muted:#555;--rule:#c8ccd2;--cas:#f4f2ee}
+ @page{margin:14mm}body{background:#fff;font-size:11pt}.wrap{max-width:none;padding:0}
+ nav,form,.huso,.hist,.guard,.estilos,.selector,.idioma,#lista{display:none!important}
+ section{display:none!important}section.on{display:block!important}
+ .ficha{display:block}.cols{grid-template-columns:1fr 1fr;gap:14px}
+ .caja{break-inside:avoid;padding:9px 11px}table{font-size:8.3pt}
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body><div class="wrap">
+
+<div class="top">
+  <h1 id="titulo">Astro</h1>
+  <div class="selector">
+    <button data-t="occidental" class="on" id="btOcc">Occidental</button>
+    <button data-t="jyotisha" id="btJyo">Jyotiṣa</button>
+  </div>
+  <div class="idioma">
+    <button data-i="es" class="on">ES</button><button data-i="en">EN</button>
+  </div>
+</div>
+<p class="lead" id="lead"></p>
+
+<nav id="nav"></nav>
+
+<section id="carta" class="on">
+  <form id="f">
+    <label id="lCiudad">Ciudad<input id="ciudad" class="w" autocomplete="off">
+      <div class="sug" id="sug"></div></label>
+    <input type="hidden" id="zona" value="Europe/Madrid">
+    <label id="lFecha">Fecha<input id="fecha" type="date" class="w" value="1985-07-15"></label>
+    <label id="lHora">Hora<input id="hora" type="time" value="03:20"></label>
+    <label id="lTz">Desfase UTC<input id="tz" value="2" readonly></label>
+    <label id="lLat">Latitud<input id="lat" value="40.4165"></label>
+    <label id="lLon">Longitud<input id="lon" value="-3.7026"></label>
+    <button class="go" type="submit" id="bLevantar">Levantar</button>
+    <button class="go sec" type="button" id="guardar">Guardar</button>
+    <div id="huso" class="huso"><span id="husoTxt"></span>
+      <button type="button" id="porque" class="lnk"></button></div>
+    <div id="hist" class="hist" hidden></div>
+  </form>
+  <div id="guardadas" class="guard"></div>
+  <div id="ficha" class="ficha"></div>
+  <div id="estilosBox" class="estilos" hidden>
+    <button data-e="norte" class="on">Norte de la India</button>
+    <button data-e="sur">Sur de la India</button>
+  </div>
+  <div class="cols"><div class="caja" id="dibujo"></div><div id="tablas"></div></div>
+</section>
+
+<section id="lectura"><div id="lec"></div></section>
+<section id="vargas"><div class="vargas" id="vg"></div></section>
+<section id="dasas"><div id="ds"></div></section>
+<section id="comparar"><div id="cmp"></div></section>
+<section id="curso"><div class="mods" id="lista"></div><div id="texto" hidden></div></section>
+<section id="ejercicio"><div id="ejBox"></div></section>
+
+<footer id="pie"></footer>
+</div><script src="i18n.js"></script><script src="app.js"></script></body></html>
