@@ -65,6 +65,7 @@ type Carta struct {
 	Vargas     map[string][]Graha `json:"vargas"`
 	Karakas    map[string]string  `json:"karakas"`
 	Dasas      []Periodo          `json:"dasas"`
+	OtrasDasas []Dasa             `json:"otrasDasas"` // aṣṭottarī, yoginī y cara
 	Yogas      []string           `json:"yogas"`
 	Karakamsa  string             `json:"karakamsa"`
 	Gocara     Gocara             `json:"gocara"`
@@ -366,6 +367,20 @@ func CalcularOpts(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64, o Opcione
 	}
 	c.Yogas = detectarYogas(c, pos, o.Lang)
 	c.Gocara = Transitos(c.LagnaRasi, int(pos["Luna"]/30), time.Now())
+
+	// ── otras daśās, para contrastar la vimśottarī ──
+	nacOtras := time.Date(anio, time.Month(mes), dia, hh, mm, 0, 0, time.UTC)
+	rasiTodos := map[string]int{}
+	for g, l := range pos {
+		rasiTodos[g] = int(l / 30)
+	}
+	c.OtrasDasas = []Dasa{
+		Astottari(pos["Luna"], nacOtras, 9),
+		// A la yoginī se le piden tres vueltas: su ciclo son 36 años y con una
+		// sola no llega a cubrir una vida entera.
+		Yogini(pos["Luna"], nacOtras, 24),
+		Cara(c.LagnaRasi, rasiTodos, nacOtras, 12),
+	}
 
 	// ── pañcāṅga, el calendario del día ──
 	c.Pancanga = CalcPancanga(jd, pos["Sol"], pos["Luna"])

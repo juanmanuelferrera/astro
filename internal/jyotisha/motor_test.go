@@ -4,6 +4,7 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Ayanāṁśa Lahiri de Swiss Ephemeris, sacado del generador y no escrito a mano
@@ -307,5 +308,177 @@ func TestNodoVerdaderoSoloMueveLosNodos(t *testing.T) {
 	d := math.Mod(pos(v, "Rāhu")-pos(v, "Ketu")+360, 360)
 	if math.Abs(d-180) > 1e-9 {
 		t.Errorf("Rāhu y Ketu están a %.6f° y siempre son 180", d)
+	}
+}
+
+// Los tres sistemas de daśās alternativos suman lo que dicen sumar. Si el
+// ciclo no cuadra, todas las fechas se van desplazando.
+func TestOtrasDasasCuadran(t *testing.T) {
+	nac := time.Date(1961, 12, 19, 16, 30, 0, 0, time.UTC)
+
+	a := Astottari(120.5, nac, 8)
+	if a.Total != 108 {
+		t.Errorf("la aṣṭottarī suma %g años y son 108", a.Total)
+	}
+	if len(a.Ciclos) != 8 {
+		t.Errorf("%d periodos y se pidieron 8", len(a.Ciclos))
+	}
+	// Ketu no entra en la aṣṭottarī: es lo que la distingue
+	for _, p := range a.Ciclos {
+		if p.Senor == "Ketu" {
+			t.Error("Ketu no forma parte de la aṣṭottarī")
+		}
+	}
+
+	y := Yogini(120.5, nac, 8)
+	if y.Total != 36 {
+		t.Errorf("la yoginī suma %g años y son 36", y.Total)
+	}
+
+	// Cada nakṣatra tiene que dar un punto de partida válido en los dos.
+	const span = 360.0 / 27.0
+	for n := 0; n < 27; n++ {
+		lon := float64(n)*span + span/2
+		if len(Astottari(lon, nac, 3).Ciclos) != 3 {
+			t.Errorf("la aṣṭottarī falla en el nakṣatra %d", n+1)
+		}
+		if len(Yogini(lon, nac, 3).Ciclos) != 3 {
+			t.Errorf("la yoginī falla en el nakṣatra %d", n+1)
+		}
+	}
+}
+
+// La cara daśā de Jaimini no cuelga de la Luna sino de los rāśis, y recorre
+// los doce sin repetir ninguno.
+func TestCaraRecorreLosDoceRasis(t *testing.T) {
+	nac := time.Date(1961, 12, 19, 16, 30, 0, 0, time.UTC)
+	rasiDe := map[string]int{"Sol": 8, "Luna": 1, "Marte": 7, "Mercurio": 8,
+		"Júpiter": 9, "Venus": 8, "Saturno": 9}
+	for lagna := 0; lagna < 12; lagna++ {
+		d := Cara(lagna, rasiDe, nac, 12)
+		if len(d.Ciclos) != 12 {
+			t.Fatalf("lagna %d da %d periodos y son 12 rāśis", lagna, len(d.Ciclos))
+		}
+		vistos := map[string]bool{}
+		for _, p := range d.Ciclos {
+			if vistos[p.Senor] {
+				t.Errorf("lagna %d repite el rāśi %s", lagna, p.Senor)
+			}
+			vistos[p.Senor] = true
+			if p.Anios < 1 || p.Anios > 12 {
+				t.Errorf("%s dura %g años, y un periodo cara va de 1 a 12", p.Senor, p.Anios)
+			}
+		}
+		if len(vistos) != 12 {
+			t.Errorf("lagna %d recorre %d rāśis distintos y son 12", lagna, len(vistos))
+		}
+		// el primero es siempre el del Lagna
+		if d.Ciclos[0].Senor != Rasis[lagna] {
+			t.Errorf("lagna %d empieza por %s y debería empezar por %s",
+				lagna, d.Ciclos[0].Senor, Rasis[lagna])
+		}
+	}
+}
+
+// Los periodos van encadenados sin huecos ni solapes: el fin de uno es el
+// principio del siguiente.
+func TestPeriodosEncadenados(t *testing.T) {
+	nac := time.Date(1961, 12, 19, 16, 30, 0, 0, time.UTC)
+	for _, d := range []Dasa{Astottari(120.5, nac, 8), Yogini(120.5, nac, 8)} {
+		for i := 1; i < len(d.Ciclos); i++ {
+			if d.Ciclos[i].Desde != d.Ciclos[i-1].Hasta {
+				t.Errorf("%s: entre %s y %s hay hueco (%s → %s)", d.Sistema,
+					d.Ciclos[i-1].Senor, d.Ciclos[i].Senor,
+					d.Ciclos[i-1].Hasta, d.Ciclos[i].Desde)
+			}
+		}
+	}
+}
+
+// ── praśna ──
+
+// Un praśna bien hecho decide primero si la pregunta se puede contestar. Los
+// tres reparos clásicos tienen que dispararse cuando toca.
+func TestPrasnaJuzgaSiEsApta(t *testing.T) {
+	// se barre un día entero buscando cada uno de los tres casos
+	visto := map[string]bool{}
+	for h := 0; h < 24; h++ {
+		for m := 0; m < 60; m += 6 {
+			c := Calcular(2026, 8, 19, h, m, 0, 41.58, 2.55)
+			p := HacerPrasna(c, "pareja", "es")
+			grado := c.Lagna - float64(c.LagnaRasi)*30
+			// lo que dice el motor tiene que cuadrar con la posición real
+			esperaNoApta := grado < 3 || grado > 27 || Gandanta(c.Lagna)
+			for _, g := range c.Grahas {
+				if g.Nombre == "Luna" && g.Gandanta {
+					esperaNoApta = true
+				}
+			}
+			if p.Apta == esperaNoApta {
+				t.Errorf("%02d:%02d lagna a %.2f° del rāśi: apta=%v y debería ser %v",
+					h, m, grado, p.Apta, !esperaNoApta)
+			}
+			if grado < 3 {
+				visto["joven"] = true
+			}
+			if grado > 27 {
+				visto["viejo"] = true
+			}
+			if Gandanta(c.Lagna) {
+				visto["gandanta"] = true
+			}
+		}
+	}
+	for _, k := range []string{"joven", "viejo", "gandanta"} {
+		if !visto[k] {
+			t.Errorf("en un día entero no aparece ningún caso de %q, así que no se ha probado", k)
+		}
+	}
+}
+
+// Cada asunto se juzga por su bhāva, y todos tienen que dar un juicio completo
+// en los dos idiomas.
+func TestPrasnaTodosLosTemas(t *testing.T) {
+	c := Calcular(2026, 8, 19, 12, 0, 0, 41.58, 2.55)
+	for _, tema := range TemasPrasna {
+		for _, lang := range []string{"es", "en"} {
+			p := HacerPrasna(c, tema.Clave, lang)
+			if p.Bhava != tema.Bhava {
+				t.Errorf("%q se juzga por el bhāva %d y debería ser el %d",
+					tema.Clave, p.Bhava, tema.Bhava)
+			}
+			if len(p.Frases) < 4 {
+				t.Errorf("%q/%s: solo %d frases", tema.Clave, lang, len(p.Frases))
+			}
+			for _, f := range p.Frases {
+				if f == "" || strings.Contains(f, "%!") || strings.Contains(f, "MISSING") {
+					t.Errorf("%q/%s: frase mal compuesta: %q", tema.Clave, lang, f)
+				}
+			}
+			if p.Nota == "" || p.SenorLagna == "" || p.Lagna == "" {
+				t.Errorf("%q/%s: praśna incompleto: %+v", tema.Clave, lang, p)
+			}
+		}
+	}
+	// un tema que no existe cae en el bhāva 1, no revienta
+	if p := HacerPrasna(c, "inventado", "es"); p.Bhava != 1 {
+		t.Errorf("un tema desconocido debería caer en el bhāva 1 y cae en el %d", p.Bhava)
+	}
+}
+
+// Los dos idiomas dicen lo mismo y no son la misma cadena.
+func TestPrasnaDosIdiomas(t *testing.T) {
+	c := Calcular(2026, 8, 19, 12, 0, 0, 41.58, 2.55)
+	es, en := HacerPrasna(c, "trabajo", "es"), HacerPrasna(c, "trabajo", "en")
+	if es.Bhava != en.Bhava || es.Apta != en.Apta || len(es.Frases) != len(en.Frases) {
+		t.Error("el praśna no dice lo mismo en los dos idiomas")
+	}
+	if es.Nota == en.Nota {
+		t.Error("la nota no cambia de idioma")
+	}
+	for i := range es.Frases {
+		if es.Frases[i] == en.Frases[i] {
+			t.Errorf("la frase %d sale idéntica en los dos idiomas: %q", i, es.Frases[i])
+		}
 	}
 }

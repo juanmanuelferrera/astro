@@ -41,6 +41,8 @@ func main() {
 	http.HandleFunc("/api/lecturaved", apiLecturaVed)   // jyotiṣa
 	http.HandleFunc("/api/prediccion", apiPrediccion)   // occidental: tiempo
 	http.HandleFunc("/api/verificar", apiVerificar)
+	http.HandleFunc("/api/verificarved", apiVerificarVed)
+	http.HandleFunc("/api/prasna", apiPrasna)          // la carta de la pregunta
 	http.HandleFunc("/api/lugares", apiLugares)
 	http.HandleFunc("/api/huso", apiHuso)
 	http.HandleFunc("/api/husohistoria", apiHistoria)
@@ -271,6 +273,93 @@ func apiVerificar(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	jsonOut(w, map[string]any{"pasos": pasos, "primerFallo": primero})
+}
+
+// apiVerificarVed corrige el cálculo a mano de una carta védica. Comparte los
+// tres primeros pasos con el occidental —la astronomía es la misma— y añade
+// los dos que son propios: restar el ayanāṁśa y sacar el rāśi del Lagna, que
+// es donde se equivoca todo el mundo al empezar.
+func apiVerificarVed(w http.ResponseWriter, r *http.Request) {
+	a, m, d, h, mi, tz, lat, lo := datos(r)
+	c := jyotisha.Calcular(a, m, d, h, mi, tz, lat, lo)
+	base := efem.Calcular(a, m, d, h, mi, tz, lat, lo)
+	EN := idioma(r) == "en"
+
+	tx := func(es, en string) string {
+		if EN {
+			return en
+		}
+		return es
+	}
+	comp := func(nombre string, tuyo, correcto, tol float64, unidad string, ang bool, pista string) map[string]any {
+		dd := tuyo - correcto
+		if ang {
+			dd = math.Mod(dd+540, 360) - 180
+		}
+		bien := math.Abs(dd) <= tol
+		com := tx("correcto", "correct")
+		if !bien {
+			com = pista
+		}
+		return map[string]any{"nombre": nombre, "tuyo": tuyo, "correcto": correcto,
+			"desvio": math.Round(math.Abs(dd)*10000) / 10000, "unidad": unidad,
+			"bien": bien, "comentario": com}
+	}
+	grados := tx("grados", "degrees")
+	pasos := []map[string]any{
+		comp(tx("Día juliano", "Julian day"), num(r, "jd"), c.JD, 0.0007,
+			tx("días", "days"), false,
+			tx("revisa la conversión a hora universal antes de seguir",
+				"check the conversion to universal time before going on")),
+		comp(tx("Tiempo sidéreo local", "Local sidereal time"), num(r, "tsl"), base.TSL, 0.05, grados, true,
+			tx("te has dejado la corrección por longitud, o la has sumado al revés",
+				"you have left out the longitude correction, or added it the wrong way")),
+		comp(tx("Ascendente tropical", "Tropical ascendant"), num(r, "asctrop"), base.Asc, 0.05, grados, true,
+			tx("este paso es el mismo que en occidental: revísalo antes de restar nada",
+				"this step is the same as in western astrology: check it before subtracting anything")),
+		comp(tx("Ayanāṁśa", "Ayanāṁśa"), num(r, "ayan"), c.Ayanamsa, 0.02, grados, false,
+			tx("el ayanāṁśa cambia con los años: no vale restar 24° fijos, hay que calcularlo para la fecha",
+				"the ayanāṁśa changes over the years: subtracting a flat 24° will not do, it has to be calculated for the date")),
+		comp(tx("Lagna sidéreo", "Sidereal lagna"), num(r, "lagna"), c.Lagna, 0.05, grados, true,
+			tx("el ayanāṁśa se RESTA una sola vez al ascendente tropical; restarlo dos veces es el error más común al empezar",
+				"the ayanāṁśa is SUBTRACTED once from the tropical ascendant; subtracting it twice is the commonest beginner's mistake")),
+	}
+	primero := -1
+	for i, p := range pasos {
+		if !p["bien"].(bool) {
+			primero = i
+			break
+		}
+	}
+	// el rāśi que sale, para que pueda comprobarlo de un vistazo
+	jsonOut(w, map[string]any{"pasos": pasos, "primerFallo": primero,
+		"lagnaRasi": c.LagnaRasi, "lagnaPos": c.LagnaPos})
+}
+
+// apiPrasna levanta la carta del momento en que se pregunta. Sin ?cuando= se
+// toma el instante de ahora, que es lo propio de un praśna: la pregunta se hace
+// cuando se hace.
+func apiPrasna(w http.ResponseWriter, r *http.Request) {
+	lat, lon := num(r, "lat"), num(r, "lon")
+	t := time.Now()
+	if s := r.URL.Query().Get("cuando"); s != "" {
+		if p, err := time.Parse("2006-01-02T15:04", s); err == nil {
+			t = p
+		}
+	}
+	// El praśna se levanta en hora local del sitio desde el que se pregunta;
+	// aquí se pasa la hora ya en UT y el huso a cero.
+	u := t.UTC()
+	c := jyotisha.Calcular(u.Year(), int(u.Month()), u.Day(), u.Hour(), u.Minute(), 0, lat, lon)
+	tema := r.URL.Query().Get("tema")
+	if tema == "" {
+		tema = "salud"
+	}
+	jsonOut(w, map[string]any{
+		"prasna": jyotisha.HacerPrasna(c, tema, idioma(r)),
+		"carta":  c,
+		"cuando": u.Format("2006-01-02 15:04 UT"),
+	})
 }
 
 func apiLugares(w http.ResponseWriter, r *http.Request) {

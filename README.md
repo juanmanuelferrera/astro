@@ -326,8 +326,48 @@ Lo último es lo que más falta hacía. El JavaScript viaja embebido con
 arranca, responde a todos los endpoints — y deja la interfaz muerta sin decir
 nada. Pasó, y en dos versiones publicadas.
 
+## Otras daśās
+
+La vimśottarī es la que se usa siempre, pero no es la única, y las clásicas
+recomiendan contrastarla. Cuando dos sistemas señalan el mismo periodo la
+lectura se sostiene; cuando solo lo dice uno, es un murmullo.
+
+- **Aṣṭottarī** — 108 años entre ocho grahas. Sin Ketu: eso es lo que la
+  distingue, y el reparto de nakṣatras por señor tampoco es regular.
+- **Yoginī** — 36 años entre ocho yoginīs. Es corta, así que una vida la
+  recorre tres veces.
+- **Cara**, la de Jaimini — funciona con otra lógica: no cuelga de la Luna sino
+  de los rāśis, y la duración de cada periodo sale de contar del signo al sitio
+  donde está su señor, hacia delante o hacia atrás según sea impar o par.
+
+## Praśna
+
+La carta del instante en que se hace la pregunta, no la del nacimiento. Es el
+recurso clásico cuando no hay hora fiable — que, como dice el módulo 2, es casi
+siempre.
+
+Lo primero que hace no es contestar: es **decidir si la pregunta se puede
+contestar**. El lagna en los tres primeros grados de su rāśi (el asunto acaba
+de arrancar), en los tres últimos (ya se resolvió), en gaṇḍānta, o la Luna en
+gaṇḍānta — cualquiera de esas y la respuesta es «espera y vuelve a preguntar».
+Que es una respuesta completa, igual que «hasta aquí llega la carta».
+
+Después juzga el bhāva del asunto: su señor y dónde está, quién lo ocupa, si
+Júpiter lo mira, si el señor del lagna y el del asunto se relacionan, y los
+bindus del aṣṭakavarga de ese rāśi — que es el único número que da el sistema y
+sirve justo para no decidir a ojo.
+
+## El ejercicio a mano, en las dos tradiciones
+
+`/api/verificar` corrige el cálculo occidental y `/api/verificarved` el védico.
+Los tres primeros pasos son los mismos, porque la astronomía no cambia entre
+tradiciones; jyotiṣa añade restar el ayanāṁśa y sacar el Lagna sidéreo. El
+corrector reconoce el error clásico de **restar el ayanāṁśa dos veces**, que es
+el que más se comete al empezar, y lo dice con esas palabras en lugar de
+limitarse a marcar el paso en rojo.
+
 ## Pendiente
 
-- Ejercicio de cálculo a mano para jyotiṣa (el occidental ya está)
-- Daśās distintas de la vimśottarī (aṣṭottarī, yoginī, cara)
-- Praśna: la carta del momento de la pregunta
+Nada declarado. Lo único que queda sin comprobar es el aspecto en un navegador
+de verdad: todo se verifica sin él (ver más abajo), y eso caza lógica y
+traducciones pero no dibujo.

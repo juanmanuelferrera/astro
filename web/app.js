@@ -39,6 +39,7 @@ async function repintarTodo(){
   if ($("#texto").dataset.f) await abrirModulo($("#texto").dataset.f);
   if ($("#cmp").innerHTML) await comparar();
   if ($("#prd").innerHTML) await predecir($("#prFecha")?$("#prFecha").value:"");
+  if ($("#ps").innerHTML) await preguntar($("#psTema")?$("#psTema").value:"", $("#psCuando")?$("#psCuando").value:"");
   if ($("#ejBox").innerHTML) pintarEjercicio();
   if (DATOS) await levantar();                       // vuelve a pedir la carta y la lectura
 }
@@ -64,6 +65,7 @@ function pintarNav() {
     document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id===b.dataset.s));
     if (b.dataset.s === "comparar") comparar();
     if (b.dataset.s === "prediccion") predecir();
+    if (b.dataset.s === "prasna") preguntar();
     if (b.dataset.s === "ejercicio") pintarEjercicio();
   });
   $("#imprimir").onclick = () => window.print();
@@ -315,7 +317,21 @@ function pintarGocara(c){const g=c.gocara;if(!g)return "";
 function pintarDasas(c){let h=`<div class="caja"><h3>${t().vimsottari}</h3><div class="dasa">`;
   c.dasas.forEach(p=>{h+=`<div class="p ${p.actual?'act':''}"><span>${cue(p.senor)}</span><span>${p.desde} → ${p.hasta}</span><span>${p.anios}</span></div>`;
     if(p.actual&&p.sub)p.sub.forEach(b=>h+=`<div class="p b ${b.actual?'act':''}"><span>${cue(b.senor)}</span><span>${b.desde} → ${b.hasta}</span><span>${b.anios}</span></div>`);});
-  $("#ds").innerHTML=h+`</div></div>`+pintarGocara(c);}
+  h+=`</div></div>`+pintarGocara(c);
+  // los otros sistemas, para contrastar
+  if(c.otrasDasas&&c.otrasDasas.length){const x=t();
+    const desc={"Aṣṭottarī":x.od_astottari,"Yoginī":x.od_yogini,"Cara (Jaimini)":x.od_cara};
+    h+=`<div class="caja"><h3>${x.od_titulo}</h3><p style="color:var(--muted);margin:0 0 12px">${x.od_lead}</p>`;
+    c.otrasDasas.forEach(d=>{
+      const act=d.ciclos.find(p=>p.actual);
+      h+=`<h4 style="margin:14px 0 2px">${d.sistema} <span style="font-weight:400;color:var(--muted);font-size:.8rem">· ${x.od_ciclo} ${d.total} ${x.od_anios}</span></h4>
+        <p style="color:var(--muted);margin:0 0 8px;font-size:.85rem">${desc[d.sistema]||""}</p><div class="dasa">`;
+      d.ciclos.forEach(p=>h+=`<div class="${p.actual?"per act":"per"}"><b>${p.senor}</b>
+        <span>${p.desde} → ${p.hasta}</span><span>${p.anios} ${x.od_anios}</span></div>`);
+      h+=`</div>`;
+      if(act)h+=`<p style="margin:6px 0 0;color:var(--ac)">${x.od_ahora}: <b>${act.senor}</b> → ${act.hasta}</p>`;});
+    h+=`</div>`;}
+  $("#ds").innerHTML=h;}
 
 // ═══ comparación: la única pantalla con las dos ═══
 async function comparar(){const x=t();
@@ -385,6 +401,44 @@ async function predecir(cuando){const x=t();
   $("#prFecha").onchange=()=>predecir($("#prFecha").value);
   $("#prHoy").onclick=e=>{e.preventDefault();predecir("");};}
 
+// ═══ praśna: la carta de la pregunta ═══
+async function preguntar(tema, cuando){const x=t();
+  const tm=tema||($("#psTema")&&$("#psTema").value)||"pareja";
+  const cu=cuando!==undefined?cuando:($("#psCuando")&&$("#psCuando").value)||"";
+  const d=await (await fetch(`/api/prasna?lat=${$("#lat").value}&lon=${$("#lon").value}`
+    +`&tema=${tm}&lang=${LANG}`+(cu?`&cuando=${cu}`:""))).json();
+  const p=d.prasna;
+  let h=`<div class="caja"><h3>${x.nav.prasna}</h3>
+    <p style="color:var(--muted);margin:0 0 12px">${x.ps_lead}</p>
+    <label style="display:inline-flex;align-items:center;gap:8px;font-size:.85rem">${x.ps_tema}
+      <select id="psTema">${TEMAS.map(k=>`<option value="${k}"${k===tm?" selected":""}>${x["t_"+k]}</option>`).join("")}</select>
+    </label>
+    <label style="display:inline-flex;align-items:center;gap:8px;font-size:.85rem;margin-left:14px">${x.ps_cuando}
+      <input type="datetime-local" id="psCuando" value="${cu}">
+      <button class="go" id="psAhora" style="padding:4px 12px">${x.ps_ahora}</button>
+    </label>
+    <table style="margin-top:12px"><tbody>
+      <tr><td>${x.ps_momento}</td><td><b>${d.cuando}</b></td></tr>
+      <tr><td>${x.ps_lagna}</td><td><b>${p.lagna}</b></td></tr>
+      <tr><td>${x.ps_senorLagna}</td><td><b>${p.senorLagna}</b></td></tr>
+    </tbody></table></div>`;
+
+  // Lo primero es si la pregunta se puede juzgar: un praśna que dice «espera»
+  // es una respuesta completa, no un fallo.
+  h+=`<div class="caja" style="border-color:${p.apta?"var(--ok)":"var(--ac)"}">
+    <h3>${p.apta?x.ps_apta:x.ps_noApta}</h3>`;
+  if(p.reparos&&p.reparos.length){h+=`<p style="color:var(--muted);margin:0 0 8px">${x.ps_reparos}</p>`;
+    p.reparos.forEach(r=>h+=`<p style="margin:0 0 9px">${r}</p>`);}
+  h+=`</div>`;
+
+  h+=`<div class="caja"><h3>${x.ps_juicio}</h3>`;
+  p.frases.forEach(fr=>h+=`<p style="margin:0 0 9px">${fr}</p>`);
+  h+=`</div><div class="aviso">${p.nota}</div>`;
+  $("#ps").innerHTML=h;
+  $("#psTema").onchange=()=>preguntar($("#psTema").value,$("#psCuando").value);
+  $("#psCuando").onchange=()=>preguntar($("#psTema").value,$("#psCuando").value);
+  $("#psAhora").onclick=e=>{e.preventDefault();preguntar($("#psTema").value,"");};}
+
 // ═══ curso ═══
 function pintarCurso(){const x=t();
   const nota = "";   // los módulos ya existen en los dos idiomas
@@ -420,30 +474,37 @@ function markdown(tx){const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
 
 // ═══ ejercicio ═══
 function pintarEjercicio(){const x=t();
+  // Cada tradición pide sus pasos: occidental llega al Ascendente y para;
+  // jyotiṣa sigue dos escalones más, restar el ayanāṁśa y sacar el Lagna.
+  const ved = TRAD==="jyotisha";
+  const campos = ved
+    ? [["jd","ejv_jd"],["tsl","ejv_tsl"],["asctrop","ejv_asctrop"],["ayan","ejv_ayan"],["lagna","ejv_lagna"]]
+    : [["jd","ej_jd"],["tsg","ej_tsg"],["tsl","ej_tsl"],["asc","ej_asc"],["mc","ej_mc"]];
+
   // Se vuelve a pintar cada vez, porque si no nunca cambiaría de idioma. Lo
   // que el alumno lleve escrito se guarda antes y se devuelve después: perder
   // sus cuentas por tocar el switch sería una faena.
-  const campos=["jd","tsg","tsl","asc","mc"];
   const escrito={};
-  if($("#ejBox").innerHTML) campos.forEach(k=>{const n=$("#"+k); if(n) escrito[k]=n.value;});
+  if($("#ejBox").innerHTML) campos.forEach(([k])=>{const n=$("#"+k); if(n) escrito[k]=n.value;});
   const resultado=$("#res")?$("#res").innerHTML:"";
-  $("#ejBox").innerHTML=`<h2 style="font-size:1.2rem;margin:0 0 6px">${x.ejTit}</h2>
-    <p class="lead">${x.ejTxt}</p><form id="fv">
-    <label>${x.ej_jd}<input id="jd" class="w"></label>
-    <label>${x.ej_tsg}<input id="tsg"></label>
-    <label>${x.ej_tsl}<input id="tsl"></label>
-    <label>${x.ej_asc}<input id="asc"></label>
-    <label>${x.ej_mc}<input id="mc"></label>
+
+  $("#ejBox").innerHTML=`<h2 style="font-size:1.2rem;margin:0 0 6px">${ved?x.ejvTit:x.ejTit}</h2>
+    <p class="lead">${ved?x.ejvTxt:x.ejTxt}</p><form id="fv">
+    ${campos.map(([k,et],i)=>`<label>${x[et]}<input id="${k}"${i===0?' class="w"':''}></label>`).join("")}
     <button class="go" type="submit">${x.comprobar}</button></form><div id="res"></div>`;
+
   $("#fv").onsubmit=async e=>{e.preventDefault();
-    const ex=["jd","tsg","tsl","asc","mc"].map(k=>`${k}=${$("#"+k).value||0}`).join("&");
-    const r=await (await fetch("/api/verificar?"+params()+"&"+ex)).json();
+    const ex=campos.map(([k])=>`${k}=${$("#"+k).value||0}`).join("&");
+    const url=(ved?"/api/verificarved?":"/api/verificar?")+params()+"&lang="+LANG+"&"+ex;
+    const r=await (await fetch(url)).json();
     let h="";r.pasos.forEach(p=>h+=`<div class="paso"><span>${p.nombre}</span><span class="${p.bien?'bien':'malo'}">${p.bien?"✓":"✗"}</span><span style="color:var(--muted)">${p.tuyo}</span><span class="${p.bien?'bien':'malo'}">${p.bien?"":"±"+p.desvio+" "+p.unidad}</span></div>`);
     if(r.primerFallo>=0){const p=r.pasos[r.primerFallo];
       h+=`<div class="aviso"><b>${p.nombre}.</b> ±${p.desvio} ${p.unidad} — ${p.comentario}. ${t().ejRehaz}</div>`;}
-    else h+=`<div class="aviso" style="border-color:var(--ok)"><b>${t().ejOk}</b></div>`;
+    else {h+=`<div class="aviso" style="border-color:var(--ok)"><b>${t().ejOk}</b>`;
+      if(ved&&r.lagnaPos)h+=`<br>${x.ejv_rasi}: <b>${r.lagnaPos}</b>`;
+      h+=`</div>`;}
     $("#res").innerHTML=h;};
-  campos.forEach(k=>{const n=$("#"+k); if(n&&escrito[k]!==undefined) n.value=escrito[k];});
+  campos.forEach(([k])=>{const n=$("#"+k); if(n&&escrito[k]!==undefined) n.value=escrito[k];});
   // El resultado anterior se deja tal cual: lo compone el servidor y volver a
   // pedirlo sin que el alumno lo pida sería recalcularle la corrección.
   if(resultado&&$("#res")) $("#res").innerHTML=resultado;}

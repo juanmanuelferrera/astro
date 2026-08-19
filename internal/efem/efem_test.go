@@ -224,3 +224,170 @@ func TestTiempoSidereo(t *testing.T) {
 			got, esperado, d*3600)
 	}
 }
+
+// TestCasasIguales: doce tramos de 30° desde el Ascendente, sin más. Es el
+// sistema que Margaret Hone prefería, y el que salva las latitudes donde
+// Plácido no puede calcular.
+func TestCasasIguales(t *testing.T) {
+	for _, asc := range []float64{0, 29.99, 137.5, 359.9} {
+		c := CuspidesIguales(asc)
+		if math.Abs(c[0]-asc) > 1e-9 {
+			t.Errorf("la casa 1 no arranca en el Ascendente: %.4f contra %.4f", c[0], asc)
+		}
+		for i := 0; i < 12; i++ {
+			sig := c[(i+1)%12]
+			d := math.Mod(sig-c[i]+360, 360)
+			if math.Abs(d-30) > 1e-9 {
+				t.Errorf("de la casa %d a la %d hay %.6f° y deberían ser 30", i+1, (i+1)%12+1, d)
+			}
+			if c[i] < 0 || c[i] >= 360 {
+				t.Errorf("la cúspide %d vale %.4f, fuera de rango", i+1, c[i])
+			}
+		}
+	}
+}
+
+// En latitudes polares Plácido no puede: hay grados que no salen ni se ponen,
+// así que no tienen arcos que trisecar. Lo que no puede pasar es que devuelva
+// números sin avisar.
+func TestPlacidoAvisaEnLatitudPolar(t *testing.T) {
+	jd := DiaJuliano(2000, 6, 21, 12)
+	eps := Oblicuidad(jd)
+	tsl := norm360(TiempoSidereoGreenwich(jd))
+	for _, lat := range []float64{78, -78, 85} {
+		if _, ok := Cuspides(tsl, lat, eps); ok {
+			t.Errorf("a %.0f° de latitud Plácido dice que sí puede, y no puede", lat)
+		}
+	}
+	for _, lat := range []float64{0, 41.4, -33.9, 59.9} {
+		if _, ok := Cuspides(tsl, lat, eps); !ok {
+			t.Errorf("a %.1f° de latitud Plácido debería poder", lat)
+		}
+	}
+}
+
+// Las dignidades esenciales: domicilio, exaltación, exilio y caída. La tabla
+// tiene que ser coherente consigo misma — el exilio es siempre el opuesto del
+// domicilio, y la caída el opuesto de la exaltación.
+func TestDignidades(t *testing.T) {
+	domicilios := map[string][]int{
+		"Sol": {4}, "Luna": {3}, "Mercurio": {2, 5}, "Venus": {1, 6},
+		"Marte": {0, 7}, "Júpiter": {8, 11}, "Saturno": {9, 10},
+	}
+	for planeta, signos := range domicilios {
+		for _, s := range signos {
+			if d := dignidad(planeta, s); d != "domicilio" {
+				t.Errorf("%s en el signo %d da %q y debería ser domicilio", planeta, s+1, d)
+			}
+			if d := dignidad(planeta, (s+6)%12); d != "exilio" {
+				t.Errorf("%s enfrente de su domicilio da %q y debería ser exilio", planeta, d)
+			}
+		}
+	}
+	exaltaciones := map[string]int{"Sol": 0, "Luna": 1, "Mercurio": 5,
+		"Venus": 11, "Marte": 9, "Júpiter": 3, "Saturno": 6}
+	for planeta, s := range exaltaciones {
+		// Mercurio es el caso raro y va aparte: se exalta en Virgo, que además
+		// es su propio domicilio. Ahí se declara el domicilio, y enfrente el
+		// exilio, que es lo que hace todo el mundo cuando las dos cosas caen
+		// en el mismo signo.
+		if planeta == "Mercurio" {
+			continue
+		}
+		if d := dignidad(planeta, s); d != "exaltación" {
+			t.Errorf("%s en el signo %d da %q y debería ser exaltación", planeta, s+1, d)
+		}
+		if d := dignidad(planeta, (s+6)%12); d != "caída" {
+			t.Errorf("%s enfrente de su exaltación da %q y debería ser caída", planeta, d)
+		}
+	}
+	if d := dignidad("Mercurio", 5); d != "domicilio" {
+		t.Errorf("Mercurio en Virgo da %q: es domicilio y exaltación a la vez", d)
+	}
+	if d := dignidad("Mercurio", 11); d != "exilio" && d != "caída" {
+		t.Errorf("Mercurio en Piscis da %q, y es exilio y caída a la vez", d)
+	}
+}
+
+// casaDe reparte una longitud entre doce cúspides. El caso que rompe siempre es
+// la casa que cruza el 0° de Aries.
+func TestCasaDe(t *testing.T) {
+	// casas iguales desde 350°: la casa 1 va de 350° a 20°, cruzando el cero
+	c := CuspidesIguales(350)
+	// casa 1: 350-20 · casa 2: 20-50 · casa 3: 50-80 · … · casa 12: 320-350
+	casos := map[float64]int{
+		350: 1, 355: 1, 0: 1, 10: 1, 19.9: 1,
+		20: 2, 45: 2, 50: 3, 180: 7, 320: 12, 349.9: 12,
+	}
+	for lon, esperada := range casos {
+		if got := casaDe(lon, c); got != esperada {
+			t.Errorf("%.1f° cae en la casa %d y debería caer en la %d", lon, got, esperada)
+		}
+	}
+	// y toda longitud tiene que caer en alguna casa
+	for lon := 0.0; lon < 360; lon += 0.3 {
+		if h := casaDe(lon, c); h < 1 || h > 12 {
+			t.Fatalf("%.1f° cae en la casa %d", lon, h)
+		}
+	}
+}
+
+// La carta occidental completa: que los planetas caigan en la casa que les toca
+// según las cúspides, y que los regentes apunten a donde está su planeta.
+func TestCartaOccidentalCoherente(t *testing.T) {
+	c := Calcular(1961, 12, 19, 16, 30, 1, 41.58, 2.55)
+	if len(c.Cuerpos) != 12 {
+		t.Errorf("%d cuerpos, deberían ser 12 (diez planetas y los dos nodos)", len(c.Cuerpos))
+	}
+	pos := map[string]float64{}
+	for _, b := range c.Cuerpos {
+		pos[b.Nombre] = b.Lon
+		if b.CasaP != casaDe(b.Lon, c.CuspP) {
+			t.Errorf("%s dice casa %d y por su longitud le toca la %d",
+				b.Nombre, b.CasaP, casaDe(b.Lon, c.CuspP))
+		}
+		if b.SignoIdx != int(b.Lon/30) {
+			t.Errorf("%s dice el signo %d y está a %.2f°", b.Nombre, b.SignoIdx, b.Lon)
+		}
+	}
+	// los regentes: el de cada casa está donde dice que está
+	for i := 0; i < 12; i++ {
+		r := c.Regentes[i]
+		if r == "" {
+			t.Errorf("la casa %d no tiene regente", i+1)
+			continue
+		}
+		if c.RegenteEn[i] != casaDe(pos[r], c.CuspP) {
+			t.Errorf("el regente de la casa %d (%s) dice estar en la %d y está en la %d",
+				i+1, r, c.RegenteEn[i], casaDe(pos[r], c.CuspP))
+		}
+	}
+	// los aspectos vienen ordenados por exactitud, que es como se leen
+	for i := 1; i < len(c.Aspectos); i++ {
+		if c.Aspectos[i].Orbe < c.Aspectos[i-1].Orbe {
+			t.Errorf("los aspectos no están ordenados por orbe: %.2f después de %.2f",
+				c.Aspectos[i].Orbe, c.Aspectos[i-1].Orbe)
+			break
+		}
+	}
+}
+
+// El día juliano y su inverso tienen que cerrar el círculo, también antes de
+// la reforma gregoriana.
+func TestJulianoIdaYVuelta(t *testing.T) {
+	casos := []struct {
+		a, m, d int
+		h       float64
+	}{
+		{2026, 8, 19, 15.5}, {2000, 1, 1, 12}, {1961, 12, 19, 15.5},
+		{1582, 10, 15, 0}, {1500, 3, 1, 6}, {837, 4, 10, 7.2},
+	}
+	for _, c := range casos {
+		jd := DiaJuliano(c.a, c.m, float64(c.d), c.h)
+		a, m, d, h := DeDiaJuliano(jd)
+		if a != c.a || m != c.m || int(d) != c.d || math.Abs(h-c.h) > 1e-4 {
+			t.Errorf("%d-%02d-%02d %.2fh → jd %.6f → %d-%02d-%02.0f %.4fh",
+				c.a, c.m, c.d, c.h, jd, a, m, d, h)
+		}
+	}
+}

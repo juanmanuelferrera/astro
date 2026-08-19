@@ -85,3 +85,58 @@ func TestHuso(t *testing.T) {
 		}
 	}
 }
+
+// La historia del huso es lo que contesta «¿por qué este desfase?». Es la parte
+// que más confunde a la gente y no la comprobaba nada.
+func TestHistoriaHuso(t *testing.T) {
+	// España lleva hora de Berlín desde 1940, así que en diciembre de 1961 el
+	// reloj iba una hora por delante del Sol de Barcelona, y algo más.
+	h, err := HistoriaHuso("Europe/Madrid", 1961, 12, 19, 16, 30, 2.55)
+	if err != nil {
+		t.Fatalf("no calcula la historia: %v", err)
+	}
+	if h.Offset != 1 {
+		t.Errorf("en diciembre de 1961 España iba en UTC+1, y da UTC%+g", h.Offset)
+	}
+	if h.Verano {
+		t.Error("en diciembre no hay horario de verano")
+	}
+	// el desfase con el Sol: Barcelona está a 2,55° este, o sea +10 minutos de
+	// sol, mientras el reloj marca +1 hora
+	if h.Solar < 0.1 || h.Solar > 0.3 {
+		t.Errorf("la hora solar de 2,55° este debería rondar UTC+0,17 y da %+g", h.Solar)
+	}
+	if h.Desfase < 0.7 || h.Desfase > 0.9 {
+		t.Errorf("el desfase reloj-Sol debería rondar los 50 minutos y da %+g h", h.Desfase)
+	}
+	if h.Zona != "Europe/Madrid" || h.Abrev == "" {
+		t.Errorf("falta zona o abreviatura: %+v", h)
+	}
+
+	// En verano tiene que detectarlo, y ese año tiene que haber cambios de hora.
+	v, err := HistoriaHuso("Europe/Madrid", 2020, 7, 15, 12, 0, 2.55)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !v.Verano || v.Offset != 2 {
+		t.Errorf("julio de 2020 en Madrid es UTC+2 con horario de verano, y da UTC%+g verano=%v",
+			v.Offset, v.Verano)
+	}
+	if len(v.DelAnio) != 2 {
+		t.Errorf("2020 tuvo dos cambios de hora y encuentra %d", len(v.DelAnio))
+	}
+
+	// Un año sin cambios de hora no debe inventarse ninguno.
+	q, err := HistoriaHuso("Europe/Madrid", 1950, 6, 15, 12, 0, 2.55)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(q.DelAnio) != 0 {
+		t.Errorf("en 1950 España no cambiaba la hora y encuentra %d cambios: %+v",
+			len(q.DelAnio), q.DelAnio)
+	}
+
+	if _, err := HistoriaHuso("No/Existe", 2000, 1, 1, 12, 0, 0); err == nil {
+		t.Error("una zona inventada debería dar error")
+	}
+}

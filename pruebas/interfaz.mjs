@@ -70,7 +70,7 @@ const exportar = `
   set TRAD(v){ TRAD = v }, get TRAD(){ return TRAD },
   set LANG(v){ LANG = v }, get LANG(){ return LANG },
   set DATOS(v){ DATOS = v }, get DATOS(){ return DATOS },
-  repintarTodo, comparar, pintarEjercicio, abrirModulo, leer, predecir,
+  repintarTodo, comparar, pintarEjercicio, abrirModulo, leer, predecir, preguntar,
   set SECCION(v){ SECCION = v }, get SECCION(){ return SECCION } };
 `;
 try { (0, eval)(src + exportar); ok("app.js se ejecuta entero"); }
@@ -152,7 +152,7 @@ const soloEs = [];
 
 // Se pinta todo en inglés, desde cero, y se mira el HTML resultante.
 A2.LANG = "en";
-const huecos = ["pc","fz","vg","ds","tablas","lec","cmp","prd","lista","ficha","husoTxt","pie"];
+const huecos = ["pc","fz","vg","ds","tablas","lec","cmp","prd","ps","lista","ficha","husoTxt","pie"];
 for (const id of huecos) { const n = doc.querySelector("#" + id); n.innerHTML = ""; n.textContent = ""; }
 // La página arranca en español y luego el usuario cambia de idioma. Se simula
 // esa primera pasada, porque es justo ahí donde se esconde el fallo: la cadena
@@ -195,10 +195,11 @@ else ok(`ningún texto español en la página en inglés (${soloEs.length} compr
   A3.TRAD = "occidental"; A3.DATOS = datos.es.occidental; await A3.predecir("2015-06-01");
   A3.TRAD = "jyotisha"; A3.DATOS = datos.es.jyotisha;
   A3.pintarEjercicio();
+  await A3.preguntar("pareja", "");
   await A3.abrirModulo("01-el-cielo");
   await A3.leer();
 
-  const antes = huecos.concat(["texto", "hist", "cmp", "prd", "ejBox"])
+  const antes = huecos.concat(["texto", "hist", "cmp", "prd", "ps", "ejBox"])
     .map(id => visible(doc.querySelector("#" + id).innerHTML)).join(" ");
   const habiaEs = soloEs.filter(([, v]) => antes.includes(v)).length;
   if (habiaEs < 5) mal("la página en español no se llegó a montar", `solo ${habiaEs} textos`);
@@ -208,14 +209,14 @@ else ok(`ningún texto español en la página en inglés (${soloEs.length} compr
   A3.LANG = "en";
   await A3.repintarTodo();
 
-  const despues = huecos.concat(["texto", "hist", "cmp", "prd", "ejBox"])
+  const despues = huecos.concat(["texto", "hist", "cmp", "prd", "ps", "ejBox"])
     .map(id => { const n = doc.querySelector("#" + id);
                  return visible(n.innerHTML) + " " + (n.textContent || ""); }).join(" ");
   const quedan = soloEs.filter(([, v]) => despues.includes(v));
   if (quedan.length) {
     const dónde = id => visible(doc.querySelector("#" + id).innerHTML);
     quedan.slice(0, 6).forEach(([k, v]) => {
-      const sitio = huecos.concat(["texto","hist","cmp","prd","ejBox"]).find(id => dónde(id).includes(v)) || "?";
+      const sitio = huecos.concat(["texto","hist","cmp","prd","ps","ejBox"]).find(id => dónde(id).includes(v)) || "?";
       mal(`tras el switch queda español en #${sitio}`, `${k}: ${v.slice(0, 50)}`);
     });
   } else ok("tras tocar el switch no queda una sola frase en español");
@@ -225,7 +226,7 @@ else ok(`ningún texto español en la página en inglés (${soloEs.length} compr
 {
   const A5 = globalThis.__api;
   A5.TRAD = "jyotisha"; A5.DATOS = datos.es.jyotisha; A5.LANG = "es";
-  for (const p of ["curso", "fuerza", "dasas", "comparar"]) {
+  for (const p of ["curso", "fuerza", "dasas", "prasna", "comparar"]) {
     A5.SECCION = p;
     A5.LANG = "en"; await A5.repintarTodo();
     if (A5.SECCION !== p) mal(`el switch te saca de la pestaña "${p}"`, `acabas en "${A5.SECCION}"`);
