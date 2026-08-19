@@ -135,9 +135,64 @@ maléficos a la vez.
 
 Ninguno de los dos sintetiza. Los dos dicen por qué.
 
+## Pañcāṅga y lagnas especiales
+
+Los cinco miembros del calendario hindú: tithi con su quincena, vāra, nakṣatra
+con su pada, yoga y karaṇa, cada uno con lo que lleva recorrido. El tithi y el
+karaṇa salen de la diferencia entre la Luna y el Sol, así que el ayanāṁśa se
+cancela; el yoga sale de la suma y no se cancela.
+
+Los tres lagnas especiales —Bhāva, Horā y Ghaṭī— se cuentan como tiempo
+transcurrido desde el amanecer, así que hacen falta salida y puesta del Sol.
+Están en `internal/efem/orto.go`, por el método de Meeus con dos iteraciones:
+el error queda por debajo del medio minuto y en latitudes polares devuelve que
+no hay orto en lugar de inventarse uno.
+
+Y los arudha padas de los doce bhāvas, con el Arudha Lagna y el Upapada.
+
+## Aṣṭakavarga
+
+Las ocho tablas de Parāśara, con su bhinnāṣṭakavarga por graha y el
+sarvāṣṭakavarga sumado. Las tablas se comprueban solas: los siete BAV tienen
+que sumar exactamente 337, y hay un test que falla si al teclearlas se coló un
+número de más o de menos.
+
+## Ṣaḍbala
+
+Las seis fuerzas en virūpas: sthāna (con ucca, saptavargaja sobre siete vargas
+y amistad compuesta, ojayugma, kendrādi y drekkāṇa), dig, kāla (nathonnatha,
+pakṣa, tribhāga, señores del día y de la hora, ayana), cheṣṭā por los ocho
+estados del movimiento, naisargika y dṛk.
+
+Lo que no está, y se dice en la propia pantalla: yuddha bala y bhāva bala.
+
+Lo que se muestra no es la cifra bruta sino la razón entre lo que cada graha
+saca y lo que se le exige, porque el listón es distinto para cada uno.
+
+## Nodo medio o verdadero
+
+Por defecto el medio, que es lo más extendido. La casilla de la pestaña de
+carta cambia al verdadero, que oscila alrededor del medio hasta grado y medio
+y mueve a Rāhu de pada. Las daśās no cambian: cuelgan del nakṣatra de la Luna.
+
+## Comprobar antes de publicar
+
+```
+./verificar.sh
+```
+
+Compila, pasa `vet` y los tests, comprueba la sintaxis del JavaScript, que los
+dos idiomas tengan las mismas claves, que los 35 módulos del curso existan en
+inglés, que los endpoints respondan, y **ejecuta la interfaz entera** contra un
+DOM de mentira con datos reales.
+
+Lo último es lo que más falta hacía. El JavaScript viaja embebido con
+`go:embed` y el compilador de Go no lo mira: un paréntesis de más ahí compila,
+arranca, responde a todos los endpoints — y deja la interfaz muerta sin decir
+nada. Pasó, y en dos versiones publicadas.
+
 ## Pendiente
 
-- Ashtakavarga y shadbala
-- Pañcāṅga: tithi, vara, yoga, karaṇa
-- Arudha padas y lagnas especiales de Jaimini
-- Nodos verdaderos como alternativa a los medios
+- Yuddha bala y bhāva bala, lo que falta del ṣaḍbala
+- Daśās distintas de la vimśottarī (aṣṭottarī, yoginī, cara)
+- Praśna: la carta del momento de la pregunta

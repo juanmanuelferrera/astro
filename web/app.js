@@ -51,6 +51,8 @@ function aplicarIdioma() {
   $("#porque").textContent = x.porque; $("#pie").textContent = x.pie;
   $("#btOcc").textContent = x.trad_occidental; $("#btJyo").textContent = x.trad_jyotisha;
   $("#btNorte").textContent = x.norte; $("#btSur").textContent = x.sur;
+  $("#nodoTxt").textContent = x.nodo + ": " + x.nodo_verdadero;
+  $("#nodoBox").title = x.nodo_ayuda;
   if (!$("#husoTxt").textContent) $("#husoTxt").textContent = x.elige;
   pintarNav(); pintarCurso();
 }
@@ -155,12 +157,13 @@ function tablasVed(c){const x=t();
 function render(){
   if(TRAD==="occidental"){$("#dibujo").innerHTML=ruedaOcc(DATOS);$("#tablas").innerHTML=tablasOcc(DATOS);}
   else{$("#dibujo").innerHTML=cuadroVed(DATOS.grahas,DATOS.lagnaRasi,"D1");$("#tablas").innerHTML=tablasVed(DATOS);
-    pintarVargas(DATOS);pintarDasas(DATOS);}
+    pintarVargas(DATOS);pintarDasas(DATOS);pintarPancanga(DATOS);pintarFuerza(DATOS);}
 }
 function params(){const [a,m,d]=$("#fecha").value.split("-"),[hh,mm]=$("#hora").value.split(":");
   return `anio=${+a}&mes=${+m}&dia=${+d}&hh=${+hh}&mm=${+mm}&tz=${$("#tz").value}&lat=${$("#lat").value}&lon=${$("#lon").value}`;}
 async function levantar(e){if(e)e.preventDefault();
-  DATOS=await (await fetch(`/api/${TRAD==="jyotisha"?"vedica":"carta"}?`+params())).json();
+  const nodo=TRAD==="jyotisha"&&$("#nodoV")&&$("#nodoV").checked?"&nodo=verdadero":"";
+  DATOS=await (await fetch(`/api/${TRAD==="jyotisha"?"vedica":"carta"}?`+params()+nodo)).json();
   const [Y,M,D]=$("#fecha").value.split("-"),[H,Mi]=$("#hora").value.split(":");
   const extra=TRAD==="jyotisha"?` · ${t().lagnaT} ${DATOS.lagnaPos}`:"";
   $("#ficha").innerHTML=`<h2>${$("#ciudad").value||"—"}</h2><p>${D}/${M}/${Y} · ${H}:${Mi} · UTC${+$("#tz").value>=0?"+":""}${$("#tz").value} · ${DATOS.ut}${extra}</p>`;
@@ -176,6 +179,79 @@ async function leer(){const url=(TRAD==="jyotisha"?"/api/lecturaved?":"/api/lect
   if(L.contradicciones.length){h+=`<div class="caja"><h3>${t().contradicciones}</h3>`;
     L.contradicciones.forEach(x=>h+=`<p style="margin:0 0 9px">${x}</p>`);h+=`</div>`;}
   $("#lec").innerHTML=h+`<div class="aviso">${L.nota}</div>`;}
+
+// ═══ pañcāṅga, arudhas y lagnas especiales ═══
+function pintarPancanga(c){const x=t(),p=c.pancanga;if(!p)return;
+  const barra=(pct,txt)=>`<div style="margin:0 0 10px"><div style="display:flex;justify-content:space-between;font-size:.78rem"><span>${txt}</span><span style="color:var(--muted)">${pct.toFixed(0)}% ${x.pc_recorrido}</span></div>
+    <div style="height:4px;background:var(--linea);border-radius:2px;margin-top:3px"><div style="height:4px;width:${pct}%;background:var(--acento);border-radius:2px"></div></div></div>`;
+  let h=`<div class="caja"><h3>${x.nav.pancanga}</h3><p style="color:var(--muted);margin:0 0 12px">${x.pc_lead}</p>
+    <table><tbody>
+    <tr><td><b>${x.pc_tithi}</b></td><td>${p.tithi}</td><td>${p.paksha} ${x.pc_paksha} · ${p.tithiNum}/30</td></tr>
+    <tr><td><b>${x.pc_vara}</b></td><td>${p.vara}</td><td>${x.pc_senor}: ${cue(p.senorVara)}</td></tr>
+    <tr><td><b>${x.pc_nak}</b></td><td>${p.nakshatra}</td><td>pada ${p.pada} · ${x.pc_senor}: ${cue(p.senorNak)}</td></tr>
+    <tr><td><b>${x.pc_yoga}</b></td><td>${p.yoga}</td><td>${p.yogaNum}/27</td></tr>
+    <tr><td><b>${x.pc_karana}</b></td><td>${p.karana}</td><td>${p.visti?"⚠":""}</td></tr>
+    </tbody></table>`;
+  h+=barra(p.tithiPct,x.pc_tithi)+barra(p.nakPct,x.pc_nak)+barra(p.luna,x.pc_luna);
+  if(p.visti)h+=`<div class="aviso">${x.pc_visti}</div>`;
+  h+=`</div>`;
+  // lagnas especiales
+  const l=c.lagnasEsp;
+  if(l&&l.hay){const hh=Math.floor(l.amanece),mm=Math.round((l.amanece-hh)*60);
+    h+=`<div class="caja"><h3>${x.pc_lagnas}</h3><p style="color:var(--muted);margin:0 0 4px">${x.pc_lagnasLead}</p>
+      <p style="color:var(--muted);margin:0 0 12px">${x.pc_amanece}: ${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")} UT</p><table><tbody>`;
+    [["bhava",x.pc_bl],["hora",x.pc_hl],["ghati",x.pc_gl]].forEach(([k,d])=>{
+      h+=`<tr><td>${gms(l[k]%30)}</td><td><b>${RASIS[Math.floor(l[k]/30)]}</b></td><td style="color:var(--muted)">${d}</td></tr>`;});
+    h+=`</tbody></table></div>`;}
+  // arudhas
+  const a=c.arudhas;
+  if(a){h+=`<div class="caja"><h3>${x.ar_titulo}</h3><p style="color:var(--muted);margin:0 0 12px">${x.ar_lead}</p>
+    <table><tbody><tr><td colspan="2"><b>${x.ar_al}</b></td><td><b>${RASIS[a.al]}</b></td></tr>
+    <tr><td colspan="2"><b>${x.ar_ul}</b></td><td><b>${RASIS[a.ul]}</b></td></tr>
+    <tr><td colspan="3" style="height:6px"></td></tr>`;
+    a.padas.forEach((r,i)=>{h+=`<tr><td>A${i+1}</td><td style="color:var(--muted)">${x.ar_bhava} ${i+1}</td><td>${RASIS[r]}</td></tr>`;});
+    h+=`</tbody></table></div>`;}
+  $("#pc").innerHTML=h;}
+
+// ═══ aṣṭakavarga y ṣaḍbala ═══
+function pintarFuerza(c){const x=t(),a=c.ashtaka,s=c.shadbala;if(!a)return;
+  // el SAV se pinta como barras: la media es 28 y la vista tiene que enseñar
+  // de un vistazo qué casas van sobradas y cuáles no llegan.
+  const max=Math.max(...a.sav);
+  let h=`<div class="caja"><h3>${x.av_titulo} · ${x.av_sav}</h3>
+    <p style="color:var(--muted);margin:0 0 12px">${x.av_lead}<br>${x.av_savLead}</p><table><tbody>`;
+  a.sav.forEach((n,i)=>{const bh=((i-c.lagnaRasi)%12+12)%12+1;
+    const col=n>=30?"var(--acento)":n<25?"var(--muted)":"var(--texto)";
+    h+=`<tr><td style="width:2.2em;color:var(--muted)">${bh}</td><td style="width:6em">${RASIS[i]}</td>
+      <td style="width:2.4em;text-align:right;font-variant-numeric:tabular-nums;color:${col}"><b>${n}</b></td>
+      <td><div style="height:8px;width:${n/max*100}%;background:${col};border-radius:2px;min-width:2px"></div></td></tr>`;});
+  h+=`</tbody></table><p style="color:var(--muted);margin:10px 0 0">${x.av_total}: ${a.total} · ${x.av_media} ${a.media.toFixed(1)}</p></div>`;
+  // BAV, un graha por fila
+  h+=`<div class="caja"><h3>${x.av_bav}</h3><p style="color:var(--muted);margin:0 0 12px">${x.av_bavLead}</p>
+    <div style="overflow-x:auto"><table><tbody><tr><td></td>`;
+  RASIS.forEach(r=>h+=`<td style="font-size:.7rem;color:var(--muted)">${r.slice(0,4)}</td>`);
+  h+=`</tr>`;
+  Object.keys(a.bav).forEach(g=>{h+=`<tr><td><b>${cue(g)}</b></td>`;
+    a.bav[g].forEach(n=>h+=`<td style="text-align:center;font-variant-numeric:tabular-nums;color:${n>=5?"var(--acento)":n<=2?"var(--muted)":"inherit"}">${n}</td>`);
+    h+=`</tr>`;});
+  h+=`</tbody></table></div></div>`;
+  // ṣaḍbala
+  if(s&&s.balas){h+=`<div class="caja"><h3>${x.sb_titulo}</h3><p style="color:var(--muted);margin:0 0 12px">${x.sb_lead}</p>
+    <div style="overflow-x:auto"><table><tbody><tr>
+    <td></td><td>${x.sb_graha}</td><td>${x.sb_sthana}</td><td>${x.sb_dig}</td><td>${x.sb_kala}</td>
+    <td>${x.sb_chesta}</td><td>${x.sb_nais}</td><td>${x.sb_drik}</td><td><b>${x.sb_rupas}</b></td>
+    <td>${x.sb_min}</td><td><b>${x.sb_razon}</b></td></tr>`;
+    const n1=v=>v.toFixed(0),n2=v=>v.toFixed(2);
+    [...s.balas].sort((p,q)=>p.rango-q.rango).forEach(b=>{
+      const corto=b.razon<1;
+      h+=`<tr><td style="color:var(--muted)">${b.rango}</td><td><b>${cue(b.graha)}</b></td>
+        <td>${n1(b.sthana)}</td><td>${n1(b.dig)}</td><td>${n1(b.kala)}</td><td>${n1(b.chesta)}</td>
+        <td>${n1(b.naisargika)}</td><td>${n1(b.drik)}</td>
+        <td style="font-variant-numeric:tabular-nums"><b>${n2(b.rupas)}</b></td>
+        <td style="color:var(--muted)">${b.minimo.toFixed(1)}</td>
+        <td style="font-variant-numeric:tabular-nums;color:${corto?"var(--muted)":"var(--acento)"}"><b>${n2(b.razon)}</b>${corto?" ↓":""}</td></tr>`;});
+    h+=`</tbody></table></div><div class="aviso">${s.nota}</div></div>`;}
+  $("#fz").innerHTML=h;}
 
 function pintarVargas(c){const x=t(); const d=k=>x["v_"+k]||"";
   $("#vg").innerHTML=Object.keys(c.vargas).map(k=>{const gs=c.vargas[k],lg=gs.find(g=>g.nombre==="Lagna");
@@ -264,13 +340,16 @@ async function resolverHuso(){const z=$("#zona").value;if(!z)return;
   const [a,m,d]=$("#fecha").value.split("-"),[hh,mm]=$("#hora").value.split(":");
   const r=await (await fetch(`/api/huso?zona=${encodeURIComponent(z)}&anio=${+a}&mes=${+m}&dia=${+d}&hh=${+hh}&mm=${+mm}`)).json();
   if(r.error)return;$("#tz").value=r.offset;
-  $("#husoTxt").innerHTML=`UTC${r.offset>=0?"+":""}${r.offset} · ${r.zona}`+(r.verano?`+" · "+`<b style="color:var(--ac)">${t().verano}</b>`:" · "+t().estandar);}
+  $("#husoTxt").innerHTML=`UTC${r.offset>=0?"+":""}${r.offset} · ${r.zona}`
+    +(r.verano?` · <b style="color:var(--ac)">${t().verano}</b>`:` · ${t().estandar}`);}
 $("#ciudad").oninput=buscarCiudad;
 $("#sug").onclick=async ev=>{const b=ev.target.closest("button");if(!b)return;
   const l=JSON.parse($("#sug").dataset.datos)[+b.dataset.i];
   $("#lat").value=l.lat;$("#lon").value=l.lon;$("#ciudad").value=l.nombre;$("#zona").value=l.zona;$("#sug").innerHTML="";
   await resolverHuso();};
 $("#fecha").onchange=resolverHuso;$("#hora").onchange=resolverHuso;
+// Cambiar de nodo obliga a recalcular: mueve a Rāhu y a Ketu de pada.
+$("#nodoV").onchange=()=>{if(DATOS)levantar();};
 $("#porque").onclick=async()=>{const c=$("#hist");
   if(!c.hidden){c.hidden=true;return;}
   const [a,m,d]=$("#fecha").value.split("-"),[hh,mm]=$("#hora").value.split(":");

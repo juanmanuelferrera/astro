@@ -67,6 +67,12 @@ type Carta struct {
 	Yogas      []string           `json:"yogas"`
 	Karakamsa  string             `json:"karakamsa"`
 	Gocara     Gocara             `json:"gocara"`
+	Pancanga   Pancanga           `json:"pancanga"`
+	Ashtaka    Ashtakavarga       `json:"ashtaka"`
+	Shadbala   Shadbala           `json:"shadbala"`
+	Arudhas    Arudhas            `json:"arudhas"`
+	LagnasEsp  LagnasEsp          `json:"lagnasEsp"`
+	NodoVerdad bool               `json:"nodoVerdad"`
 }
 
 func norm(x float64) float64 {
@@ -214,12 +220,18 @@ func Vimsottari(lonLuna float64, nacimiento time.Time, hasta int) []Periodo {
 
 // ─────────────── carta completa ───────────────
 
+// Calcular usa el nodo medio, que es lo más extendido.
 func Calcular(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64) Carta {
-	base := efem.Calcular(anio, mes, dia, hh, mm, tz, lat, lonGeo)
+	return CalcularCon(anio, mes, dia, hh, mm, tz, lat, lonGeo, false)
+}
+
+// CalcularCon permite pedir el nodo verdadero.
+func CalcularCon(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64, nodoVerdadero bool) Carta {
+	base := efem.CalcularCon(anio, mes, dia, hh, mm, tz, lat, lonGeo, nodoVerdadero)
 	jd := base.JD
 	ayan := Ayanamsa(jd)
 
-	c := Carta{JD: jd, UT: base.UT, Ayanamsa: ayan,
+	c := Carta{JD: jd, UT: base.UT, Ayanamsa: ayan, NodoVerdad: nodoVerdadero,
 		Lagna: Sidereo(base.Asc, jd), MC: Sidereo(base.MC, jd),
 		Vargas: map[string][]Graha{}, Karakas: map[string]string{}}
 	c.LagnaRasi = int(c.Lagna / 30)
@@ -341,7 +353,76 @@ func Calcular(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64) Carta {
 	}
 	c.Yogas = detectarYogas(c, pos)
 	c.Gocara = Transitos(c.LagnaRasi, int(pos["Luna"]/30), time.Now())
+
+	// ── pañcāṅga, el calendario del día ──
+	c.Pancanga = CalcPancanga(jd, pos["Sol"], pos["Luna"])
+
+	// ── aṣṭakavarga: los bindus por rāśi ──
+	rasiDe := map[string]int{"Lagna": c.LagnaRasi}
+	for g, l := range pos {
+		rasiDe[g] = int(l / 30)
+	}
+	c.Ashtaka = CalcAshtakavarga(rasiDe)
+
+	// ── arudha padas: la imagen de cada bhāva ──
+	c.Arudhas = CalcArudhas(c.Bhavas, rasiDe)
+
+	// ── lagnas especiales: se cuentan desde el amanecer ──
+	// jd0 es el día juliano a las 0h UT del día del nacimiento.
+	jd0 := math.Floor(jd-0.5) + 0.5
+	orto, _, ocaso, hay := efem.Orto(jd0, lat, lonGeo)
+	horasUT := (jd - jd0) * 24
+	if hay {
+		desde := horasUT - orto
+		if desde < 0 {
+			// nació antes del amanecer: cuenta desde el orto del día anterior
+			o2, _, _, h2 := efem.Orto(jd0-1, lat, lonGeo)
+			if h2 {
+				orto, desde = o2, horasUT+24-o2
+			}
+		}
+		solOrto := Sidereo(efem.Sol(jd0+orto/24), jd)
+		c.LagnasEsp = CalcLagnasEsp(solOrto, desde, orto, true)
+	}
+
+	// ── ṣaḍbala ──
+	entradas := map[string]EntradaBala{}
+	for _, b := range base.Cuerpos {
+		n := b.Nombre
+		if n == "Urano" || n == "Neptuno" || n == "Plutón" ||
+			n == "Nodo Norte" || n == "Nodo Sur" {
+			continue
+		}
+		l := Sidereo(b.Lon, jd)
+		entradas[n] = EntradaBala{Lon: l, Vel: b.Vel,
+			Bhava: ((int(l/30)-c.LagnaRasi)%12+12)%12 + 1}
+	}
+	esDeDia := hay && horasUT >= orto && horasUT < ocaso
+	// el señor de la hora gira en el mismo orden que los días de la semana
+	senorHora := "Sol"
+	if hay {
+		// Horas planetarias, contadas de reloj desde el amanecer. La primera
+		// es del señor del día y las siguientes bajan por el orden caldeo.
+		h := int(horasUT-orto+24) % 24
+		senorHora = ordenHoras[(indiceCaldeo(c.Pancanga.SenorVara)+h)%7]
+	}
+	c.Shadbala = CalcShadbala(entradas, c.Lagna, c.MC, esDeDia,
+		c.Pancanga.TithiNum, c.Pancanga.SenorVara, senorHora)
+
 	return c
+}
+
+// El orden caldeo, de más lento a más rápido, es el que rige las horas
+// planetarias. Cada hora desde el amanecer avanza un puesto.
+var ordenHoras = [7]string{"Saturno", "Júpiter", "Marte", "Sol", "Venus", "Mercurio", "Luna"}
+
+func indiceCaldeo(g string) int {
+	for i, n := range ordenHoras {
+		if n == g {
+			return i
+		}
+	}
+	return 0
 }
 
 // detectarYogas busca las combinaciones que se pueden afirmar con seguridad

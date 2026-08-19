@@ -12,6 +12,24 @@ APP="$DEST/Astro.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
+# El JavaScript va embebido con go:embed, asi que el compilador de Go no lo
+# mira: un error de sintaxis ahi pasa la compilacion y rompe la interfaz
+# entera sin que nada avise. Se comprueba aqui antes de empaquetar nada.
+if command -v node >/dev/null 2>&1; then
+  echo "→ comprobando el JavaScript"
+  for f in web/*.js; do
+    node --check "$f" || { echo "ERROR de sintaxis en $f — no se empaqueta"; exit 1; }
+  done
+  # y que ademas se ejecute: la sintaxis correcta no garantiza que pinte nada
+  go build -o /tmp/_astro_p . && /tmp/_astro_p -abrir=false -puerto=8998 >/dev/null 2>&1 &
+  sleep 1.5
+  node pruebas/interfaz.mjs 8998 >/dev/null 2>&1 \
+    || { echo "ERROR: la interfaz falla al ejecutarse — no se empaqueta"; pkill -f _astro_p; exit 1; }
+  pkill -f _astro_p 2>/dev/null; rm -f /tmp/_astro_p
+else
+  echo "⚠ node no esta instalado: el JavaScript no se ha comprobado"
+fi
+
 echo "→ compilando el binario universal"
 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o /tmp/_a1 .
 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o /tmp/_a2 .

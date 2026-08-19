@@ -41,6 +41,7 @@ type Cuerpo struct {
 	Grado    float64 `json:"grado"`
 	GlifoSig string  `json:"glifoSig"`
 	Retro    bool    `json:"retro"`
+	Vel      float64 `json:"vel"` // grados por día; negativa si retrograda
 	Dignidad string  `json:"dignidad"`
 	CasaP    int     `json:"casaP"`
 	CasaI    int     `json:"casaI"`
@@ -111,7 +112,16 @@ func casaDe(lon float64, c [12]float64) int {
 }
 
 // Calcular levanta la carta completa. tz en horas (este positivo), lonGeo este positivo.
+// Calcular usa el nodo lunar medio, que es lo tradicional en occidental.
 func Calcular(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64) Carta {
+	return CalcularCon(anio, mes, dia, hh, mm, tz, lat, lonGeo, false)
+}
+
+// CalcularCon permite pedir el nodo verdadero en vez del medio. En jyotiṣa hay
+// escuelas para las dos cosas y la diferencia llega a grado y medio, que basta
+// para mover a Rāhu de pada y a veces de nakṣatra. Las daśās no cambian: esas
+// cuelgan del nakṣatra de la Luna, no del de Rāhu.
+func CalcularCon(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64, nodoVerdadero bool) Carta {
 	horaLocal := float64(hh) + float64(mm)/60
 	horaUT := horaLocal - tz
 	d := float64(dia)
@@ -148,28 +158,31 @@ func Calcular(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64) Carta {
 		case "Luna":
 			l = Luna(jd)
 		case "Nodo Norte":
-			l = NodoLunarMedio(jd)
+			l = nodo(jd, nodoVerdadero)
 		case "Nodo Sur":
-			l = norm360(NodoLunarMedio(jd) + 180)
+			l = norm360(nodo(jd, nodoVerdadero) + 180)
 		default:
 			l = Planeta(n, jd)
 		}
 		pos[n] = l
 		si := int(l / 30)
-		retro := false
-		if n != "Sol" && n != "Luna" {
-			l2 := l
-			switch n {
-			case "Nodo Norte", "Nodo Sur":
-				retro = true
-			default:
-				l2 = Planeta(n, jd+1)
-				retro = math.Mod(l2-l+540, 360)-180 < 0
-			}
+		// La velocidad se saca por diferencia central, medio día a cada lado.
+		// Sirve para saber si retrograda y, en jyotiṣa, para el cheṣṭā bala.
+		var vel float64
+		switch n {
+		case "Sol":
+			vel = math.Mod(Sol(jd+0.5)-Sol(jd-0.5)+540, 360) - 180
+		case "Luna":
+			vel = math.Mod(Luna(jd+0.5)-Luna(jd-0.5)+540, 360) - 180
+		case "Nodo Norte", "Nodo Sur":
+			vel = math.Mod(nodo(jd+0.5, nodoVerdadero)-nodo(jd-0.5, nodoVerdadero)+540, 360) - 180
+		default:
+			vel = math.Mod(Planeta(n, jd+0.5)-Planeta(n, jd-0.5)+540, 360) - 180
 		}
+		retro := vel < 0
 		c.Cuerpos = append(c.Cuerpos, Cuerpo{Nombre: n, Glifo: Glifo[n], Lon: l,
 			Signo: Signos[si], SignoIdx: si, Grado: l - float64(si)*30,
-			GlifoSig: GlifoSigno[si], Retro: retro, Dignidad: dignidad(n, si),
+			GlifoSig: GlifoSigno[si], Retro: retro, Vel: vel, Dignidad: dignidad(n, si),
 			CasaP: casaDe(l, cp), CasaI: casaDe(l, ci)})
 	}
 
@@ -205,4 +218,12 @@ func Calcular(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64) Carta {
 		c.RegenteEn[i] = casaDe(pos[r], cp)
 	}
 	return c
+}
+
+// nodo elige entre el nodo medio y el verdadero.
+func nodo(jd float64, verdadero bool) float64 {
+	if verdadero {
+		return NodoLunarVerdadero(jd)
+	}
+	return NodoLunarMedio(jd)
 }

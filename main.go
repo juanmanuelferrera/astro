@@ -133,7 +133,12 @@ func apiCarta(w http.ResponseWriter, r *http.Request) {
 
 func apiVedica(w http.ResponseWriter, r *http.Request) {
 	a, m, d, h, mi, tz, lat, lo := datos(r)
-	jsonOut(w, jyotisha.Calcular(a, m, d, h, mi, tz, lat, lo))
+	jsonOut(w, jyotisha.CalcularCon(a, m, d, h, mi, tz, lat, lo, nodoVerdadero(r)))
+}
+
+// nodoVerdadero lee ?nodo=verdadero. Por defecto se usa el medio.
+func nodoVerdadero(r *http.Request) bool {
+	return r.URL.Query().Get("nodo") == "verdadero"
 }
 
 func apiLectura(w http.ResponseWriter, r *http.Request) {

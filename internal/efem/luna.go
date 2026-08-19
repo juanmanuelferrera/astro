@@ -70,3 +70,28 @@ func NodoLunarMedio(jd float64) float64 {
 	return norm360(125.0445479 - 1934.1362891*t + 0.0020754*t*t +
 		t*t*t/467441 - t*t*t*t/60616000)
 }
+
+// NodoLunarVerdadero devuelve el nodo norte verdadero (Rāhu) en grados.
+//
+// El nodo medio es una recta: retrocede siempre a la misma velocidad. El
+// verdadero es donde el plano de la órbita lunar corta de veras la eclíptica,
+// y oscila alrededor del medio hasta grado y medio, con periodo de unos
+// 173 días. Puede llegar a estar directo unos días.
+//
+// Términos periódicos de Meeus, cap. 47, ecuación de Ω verdadero.
+func NodoLunarVerdadero(jd float64) float64 {
+	t := T(jd)
+	D := norm360(297.8501921 + 445267.1114034*t - 0.0018819*t*t +
+		t*t*t/545868 - t*t*t*t/113065000)
+	M := norm360(357.5291092 + 35999.0502909*t - 0.0001536*t*t + t*t*t/24490000)
+	Mp := norm360(134.9633964 + 477198.8675055*t + 0.0087414*t*t +
+		t*t*t/69699 - t*t*t*t/14712000)
+	F := norm360(93.2720950 + 483202.0175233*t - 0.0036539*t*t -
+		t*t*t/3526000 + t*t*t*t/863310000)
+	c := -1.4979*math.Sin(2*(D-F)*Grados) -
+		0.1500*math.Sin(M*Grados) -
+		0.1226*math.Sin(2*D*Grados) +
+		0.1176*math.Sin(2*F*Grados) -
+		0.0801*math.Sin(2*(Mp-F)*Grados)
+	return norm360(NodoLunarMedio(jd) + c)
+}
