@@ -119,5 +119,63 @@ chmod +x "$APP/Contents/MacOS/Astro" "$APP/Contents/MacOS/astro-bin"
 python3 empaquetar/icono.py "$APP/Contents/Resources/astro.icns" 2>/dev/null || \
   echo "  (sin icono: falta el generador)"
 
+# El binario suelto, por si alguien lo prefiere sin envoltorio. El de dentro
+# del paquete ya es universal, asi que basta copiarlo.
+cp "$APP/Contents/MacOS/astro-bin" "$DEST/astro-mac"
+
+# El zip lo hace el script, no la mano. Hacerlo aparte es como se queda viejo.
+# ditto y no zip: un .app lleva enlaces simbolicos y atributos que zip pierde.
+echo "→ armando el zip"
+# El directorio de montaje se llama Astro y no tmp.loquesea: --keepParent
+# conserva el nombre del padre, y con un mktemp pelado el zip acababa
+# llevando dentro una carpeta llamada tmp.QUnAYL3oOo.
+BASE=$(mktemp -d)
+STAGE="$BASE/Astro"
+mkdir -p "$STAGE"
+cp -R "$APP" "$STAGE/"
+cat > "$STAGE/LEEME.txt" <<'DOC'
+Astro — cartas astrales, occidental y jyotiṣa
+
+Arrastra Astro.app a Aplicaciones y ábrelo. Levanta el servidor solo y abre una
+ventana sin barra de direcciones. Al cerrarla se apaga todo.
+
+
+SI MACOS DICE QUE NO SE PUEDE ABRIR
+
+La aplicación no está firmada con una cuenta de desarrollador de Apple, así que
+al bajarla de internet macOS le pone una marca de cuarentena y se niega a
+abrirla. Hay dos maneras de quitarla.
+
+La rápida, en el Terminal — ojo al -r, que hace falta porque es un paquete y no
+un fichero suelto:
+
+    xattr -dr com.apple.quarantine /Applications/Astro.app
+
+Si la tienes en otro sitio, pon esa ruta. El error «No such file» significa que
+la ruta no es esa, no que el comando esté mal.
+
+La otra, sin Terminal: Control-clic sobre Astro.app, «Abrir», y confirmar. Solo
+la primera vez.
+
+
+OPCIONES
+
+Para las opciones hay que llamar al binario de dentro:
+
+    /Applications/Astro.app/Contents/MacOS/astro-bin -puerto 9000
+    /Applications/Astro.app/Contents/MacOS/astro-bin -red
+    /Applications/Astro.app/Contents/MacOS/astro-bin -abrir=false
+
+-red lo hace accesible desde otros equipos de la red local.
+
+No necesita instalar nada más: lleva dentro las efemérides, el curso y las
+ciudades. Las cartas guardadas quedan en ~/.astro/
+DOC
+rm -f "$DEST/Astro-mac-app.zip"
+ditto -c -k --sequesterRsrc --keepParent "$STAGE" "$DEST/Astro-mac-app.zip"
+rm -rf "$BASE"
+
 echo "→ listo: $APP"
-du -sh "$APP" | awk '{print "   tamaño: "$1}'
+du -sh "$APP" | awk '{print "   app:    "$1}'
+du -h "$DEST/Astro-mac-app.zip" | awk '{print "   zip:    "$1}'
+du -h "$DEST/astro-mac" | awk '{print "   binario: "$1}'

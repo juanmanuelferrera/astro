@@ -217,13 +217,20 @@ sería una faena.
 ## Empaquetar
 
 ```
-./empaquetar/hacer-app.sh      # Astro.app para macOS, con icono y sin terminal
-./empaquetar/hacer-linux.sh    # zip para Linux: los dos binarios y un lanzador
+./empaquetar/todo.sh
 ```
 
-El de macOS no deja empaquetar si el JavaScript no compila o la interfaz no se
-ejecuta. El de Linux mete un lanzador que elige amd64 o arm64 solo, y un LEEME
-con las opciones.
+Comprueba primero y, si algo falla, no publica nada. Después construye lo de
+macOS, lo de Linux y los binarios sueltos de Windows y Linux.
+
+Existe porque los venía compilando a mano cada vez, y lo que se hace a mano se
+olvida: el paquete de Linux se quedó tres versiones atrás sin que nada avisara,
+y encima llevaba dentro los binarios de macOS.
+
+Los dos paquetes llevan un LEEME. El de macOS explica lo de la cuarentena de
+Gatekeeper —la aplicación no está firmada, así que al bajarla el sistema se
+niega a abrirla— con el `xattr -dr` y la alternativa sin terminal. El de Linux
+trae un lanzador que elige amd64 o arm64 mirando `uname`.
 
 ## Comprobar antes de publicar
 
