@@ -1,13 +1,40 @@
 # Astro
 
 Cartas natales y curso en **dos tradiciones** —occidental y jyotiṣa— y **dos idiomas**, en un
-único binario. Sin Python, sin red, sin instalar nada.
+único binario de Go. Sin Python, sin red, sin instalar nada: las efemérides, los dos cursos y
+41.451 poblaciones van dentro del ejecutable.
 
 ```
 ./astro
 ```
 
-Abre el navegador en `http://localhost:8733`. Si ese puerto está ocupado, busca el siguiente libre.
+Abre el navegador en `http://localhost:8733`. Si ese puerto está ocupado, busca el siguiente.
+
+Versión actual: **1.8.0** (`./astro -version`).
+
+---
+
+## Descargar
+
+En [releases](https://github.com/juanmanuelferrera/astro/releases) hay un paquete por sistema:
+
+| | |
+|---|---|
+| `Astro-mac-app.zip` | aplicación de macOS con icono, sin terminal. Trae un LEEME con lo de la cuarentena de Gatekeeper |
+| `astro-linux.zip` | los dos binarios y un lanzador que elige amd64 o arm64 mirando `uname` |
+| `astro-mac` | binario universal suelto (x86_64 + arm64) |
+| `astro-linux-amd64`, `astro-linux-arm64`, `astro-windows-amd64.exe` | binarios sueltos |
+
+La aplicación de macOS **no está firmada** con cuenta de Apple, así que al bajarla el sistema se
+niega a abrirla. Se quita así, y el `-r` hace falta porque es un paquete y no un fichero:
+
+```
+xattr -dr com.apple.quarantine /Applications/Astro.app
+```
+
+O sin terminal: Control-clic sobre la aplicación, «Abrir», confirmar. Solo la primera vez.
+
+---
 
 ## Las dos tradiciones
 
@@ -15,42 +42,172 @@ Un selector arriba cambia **todo a la vez**: el cálculo, el vocabulario, el dib
 En modo védico la palabra «Ascendente» no aparece en ninguna parte; en occidental no aparece
 «Lagna». No se pueden mezclar por accidente.
 
-La excepción es deliberada: la pestaña **Comparar** pone los dos zodíacos lado a lado y marca qué
-cuerpos cambian de signo. El mayor riesgo de confusión convertido en la función que mejor enseña.
+La excepción es deliberada: la pestaña **Comparar** pone los dos sistemas lado a lado. El mayor
+riesgo de confusión convertido en la función que mejor enseña.
 
 ### Occidental
 
 Zodíaco tropical · casas de Plácido y casas iguales en paralelo · aspectos por grados con orbes ·
 rueda circular con desapilado angular de glifos y línea al grado real · regentes de casa.
 
-**Lectura** por el Sistema de Palabras Clave de Margaret Hone: traduce la carta a frases literales
-agrupadas por categorías y **señala las contradicciones**. No sintetiza — eso es del que lee, y el
-módulo 10 explica por qué.
-
-**Corrector del cálculo a mano**: escribes lo que te salió en cada paso y dice en cuál te
-desviaste, sin darte el resultado bueno.
-
-**Curso de 14 módulos**, más la vía corta de un cuarto de hora y el plan de una semana.
+Pestañas: **Carta · Lectura · Predicción · Comparar · Curso · Cálculo a mano**
 
 ### Jyotiṣa
 
 Zodíaco sidéreo con ayanāṁśa Lahiri · bhāvas de signo entero · 27 nakṣatras con pada y señor ·
 dṛṣṭi por signo con los aspectos especiales de Marte, Júpiter y Saturno · dignidades védicas con
-grados exactos, mūlatrikoṇa, combustión, dig-bala y gaṇḍānta · **diez vargas dibujadas** ·
-daśās vimśottarī con bhuktis · kārakas de Jaimini con karakāṁśa · detección de yogas
-(pañca-mahāpuruṣa, rāja-yoga por señores de kendra y trikona, nīca-bhaṅga, gaja-kesari,
-kemadruma) · **tránsitos y Sade Sati** con la fase actual y su fecha de salida.
+grados exactos, mūlatrikoṇa, combustión, dig-bala y gaṇḍānta · diez vargas dibujadas · yogas
+(pañca-mahāpuruṣa, rāja-yoga, nīca-bhaṅga, gaja-kesari, kemadruma) · tránsitos y Sade Sati con la
+fase actual y su fecha de salida.
 
 Carta cuadrada en los **dos estilos**, norte y sur de la India, con las vargas dibujadas por el
 mismo componente para poder compararlas.
 
-**Curso de 16 módulos.**
+Pestañas: **Carta · Lectura · Vargas · Daśās · Pañcāṅga · Fuerza · Praśna · Comparar · Curso ·
+Cálculo a mano**
 
 ### Comunes a las dos
 
 41.451 lugares (España completa, resto del mundo desde 15.000 habitantes) · husos horarios
-históricos con el botón «¿por qué este desfase?» que muestra los cambios del país ·
-guardar y recuperar cartas · imprimir a PDF · interfaz en español e inglés.
+históricos con el botón «¿por qué este desfase?» · guardar y recuperar cartas · imprimir a PDF ·
+interfaz en español e inglés · **curso de 35 módulos** (18 occidentales, 17 védicos, 50.000
+palabras) traducido entero.
+
+---
+
+## Qué hace cada pestaña
+
+### Lectura
+
+Las dos tradiciones tienen motor de interpretación, y los dos **componen la frase a partir de sus
+piezas** en lugar de guardar textos prefabricados.
+
+**Occidental** — `internal/occidental/claves.go`. Sistema de Palabras Clave de Margaret Hone:
+función del planeta + modo del signo + terreno de la casa + dignidad, más los regentes, que
+convierten un aspecto suelto en un argumento. Detecta cuándo un planeta recibe a la vez aspectos
+duros y blandos y lo declara como contradicción en lugar de elegir un lado.
+
+**Jyotiṣa** — `internal/jyotisha/lectura.go`. Función del graha + modo del rāśi + terreno del
+bhāva + nakṣatra + dignidad, y sobre todo la **cadena de señores**, que es como razona jyotiṣa: de
+qué depende un asunto, y de qué depende aquello. Añade dṛṣṭi, la daśā que corre ahora y los
+kārakas de Jaimini. Marca como disputado el bhāva que reciben benéficos y maléficos a la vez.
+
+Ninguno de los dos sintetiza. Los dos dicen por qué.
+
+### Predicción (occidental)
+
+Tránsitos, progresiones secundarias y revolución solar — las tres que enseña el módulo 12.
+
+Los tránsitos, solo de los lentos: los rápidos marcan días y no periodos. Orbes separados, 1,5°
+los aspectos mayores y 0,4° los menores; con el mismo orbe la lista se llenaba de
+sesquicuadraturas y el tránsito que importaba quedaba enterrado. Dice si aplica o separa, y si el
+planeta va a retrogradar encima del punto y **pasar tres veces**.
+
+Y lo que las une: las **convergencias**. Un periodo importa cuando dos técnicas **distintas**
+señalan el mismo punto natal. Dos progresiones sobre el mismo sitio son una voz repetida y no
+cuentan. Cuando no coincide nada, lo dice en lugar de rellenar.
+
+### Pañcāṅga (jyotiṣa)
+
+Los cinco miembros del calendario hindú: tithi con su quincena, vāra, nakṣatra con su pada, yoga y
+karaṇa, cada uno con lo que lleva recorrido. El tithi y el karaṇa salen de la **diferencia** entre
+la Luna y el Sol, así que el ayanāṁśa se cancela; el yoga sale de la **suma**, y no se cancela.
+
+Los tres lagnas especiales —Bhāva, Horā y Ghaṭī— se cuentan desde el amanecer, así que hacen falta
+salida y puesta del Sol: están en `internal/efem/orto.go`. Y los arudha padas de los doce bhāvas,
+con el Arudha Lagna y el Upapada.
+
+### Fuerza (jyotiṣa)
+
+**Aṣṭakavarga** — las ocho tablas de Parāśara, con el bhinnāṣṭakavarga por graha y el
+sarvāṣṭakavarga sumado. Las tablas se comprueban solas: los siete BAV suman exactamente 337, y hay
+un test que falla si al teclearlas se coló un número de más.
+
+**Ṣaḍbala** — las seis fuerzas en virūpas: sthāna (ucca, saptavargaja sobre siete vargas con
+amistad compuesta, ojayugma, kendrādi, drekkāṇa), dig, kāla (nathonnatha, pakṣa, tribhāga, señores
+del día y de la hora, ayana), cheṣṭā por los ocho estados del movimiento, naisargika, dṛk y
+**yuddha** — la guerra entre dos planetas a menos de un grado, que sale en 8 de cada 100 cartas.
+
+Lo que se muestra no es la cifra bruta sino la **razón** entre lo que cada graha saca y lo que se
+le exige, porque el listón es distinto para cada uno.
+
+Aparte va el **bhāva bala**, que contesta otra pregunta: no cuánto puede un graha sino cuánto
+puede un asunto.
+
+### Daśās (jyotiṣa)
+
+Vimśottarī con sus bhuktis, más tres sistemas para contrastarla — cuando dos señalan el mismo
+periodo la lectura se sostiene, y cuando solo lo dice uno es un murmullo.
+
+- **Aṣṭottarī**, 108 años entre ocho grahas. Sin Ketu: eso es lo que la distingue.
+- **Yoginī**, 36 años entre ocho yoginīs. Es corta, así que una vida la recorre tres veces.
+- **Cara**, la de Jaimini — no cuelga de la Luna sino de los **rāśis**, y la duración de cada
+  periodo sale de contar del signo al sitio donde está su señor.
+
+### Praśna (jyotiṣa)
+
+La carta del instante en que se hace la pregunta, no la del nacimiento. Es el recurso clásico
+cuando no hay hora fiable — que, como dice el módulo 2, es casi siempre.
+
+Lo primero que hace **no es contestar: es decidir si la pregunta se puede contestar**. Lagna en
+los tres primeros grados de su rāśi, en los tres últimos, en gaṇḍānta, o la Luna en gaṇḍānta —
+cualquiera de ésas y la respuesta es «espera y vuelve a preguntar», que es una respuesta completa.
+
+Después juzga el bhāva del asunto (diecisiete a elegir): su señor y dónde está, quién lo ocupa, si
+Júpiter lo mira, si el señor del lagna y el del asunto se relacionan, y los bindus del
+aṣṭakavarga de ese rāśi.
+
+### Comparar
+
+La única pantalla donde las dos tradiciones aparecen juntas, y enseña las **dos** diferencias:
+
+- El **zodíaco**: tropical contra sidéreo, con el ayanāṁśa que los separa.
+- Las **casas**: Plácido, desiguales y dependientes de la latitud, contra el signo entero. Ésta
+  suele pesar más y casi nunca se cuenta. En la carta de prueba cambian de casa 6 de 9 cuerpos y
+  de signo solo 4.
+
+### Cálculo a mano
+
+Escribes lo que te salió en cada paso y dice en cuál te desviaste, **sin darte el resultado
+bueno**. Los tres primeros pasos son los mismos en las dos tradiciones, porque la astronomía no
+cambia; jyotiṣa añade restar el ayanāṁśa y sacar el Lagna sidéreo.
+
+El corrector reconoce el error de **restar el ayanāṁśa dos veces**, que es el que más se comete al
+empezar, y lo dice con esas palabras.
+
+---
+
+## Precisión
+
+Motor astronómico propio, **cero dependencias externas**. Meeus para Sol, Luna, tiempo sidéreo y
+orto; elementos de Standish con corrección de precesión al equinoccio de la fecha para los
+planetas; casas de Plácido por bisección numérica; ayanāṁśa Lahiri por polinomio ajustado.
+
+Los tests lo miden contra **Swiss Ephemeris**, no contra sí mismo — eso solo detectaría cambios,
+no errores. Sobre 690 posiciones entre 1800 y 2100:
+
+| | 1800-2050 | hasta 2100 |
+|---|---|---|
+| Sol | 0,37′ | 0,28′ |
+| Luna | 0,74′ | 0,88′ |
+| Júpiter | 7,1′ | 3,4′ |
+| Saturno | 11,0′ | 18,6′ |
+| resto de planetas | < 3,2′ | < 3,8′ |
+| casas de Plácido | 3,7″ | |
+| ayanāṁśa Lahiri | 0,0002″ | |
+| salida y puesta del Sol | 35 s | |
+
+Saturno es el peor porque la gran desigualdad con Júpiter no cabe en unos elementos keplerianos.
+La tabla de Standish está dada para 1800-2050 y fuera se degrada; por eso el test mide las dos
+ventanas por separado, en lugar de aflojar el margen de la buena para tapar la mala.
+
+Y por encima de todo eso, lo que de verdad importa en astrología: **ninguna de las 690 posiciones
+cambia de signo**. Diez minutos de arco no mueven a nadie de casa; salir en otro signo, sí.
+
+En latitudes polares detecta que Plácido no puede resolverse y cae a casas iguales avisándolo, y
+que el Sol no sale, en lugar de inventarse una hora.
+
+---
 
 ## Opciones
 
@@ -59,181 +216,82 @@ guardar y recuperar cartas · imprimir a PDF · interfaz en español e inglés.
 | `-puerto=9000` | puerto fijo; por defecto 8733, y salta al siguiente libre si está ocupado |
 | `-abrir=false` | no abrir el navegador al arrancar |
 | `-red` | aceptar conexiones de otros equipos de la red local |
+| `-version` | decir la versión y salir |
 
 Por defecto se ata solo a `127.0.0.1`: nadie de la red puede entrar.
 
-## Precisión
+Las cartas guardadas van al directorio de configuración del sistema, dentro de `astro/`. Con la
+variable **`ASTRO_DIR`** se mandan a otro sitio — sirve para llevar el programa en un pendrive con
+sus cartas dentro, y para que los tests no escriban en las del usuario.
 
-Motor astronómico propio, **cero dependencias externas**. Meeus para Sol, Luna y tiempo sidéreo;
-elementos de Standish con corrección de precesión al equinoccio de la fecha para los planetas;
-casas de Plácido por bisección numérica; ayanāṁśa Lahiri por polinomio ajustado.
+---
 
-Verificado contra Swiss Ephemeris en 60 fechas aleatorias entre 1900 y 2040:
+## Cómo está hecho
 
-| | error medio | máximo |
-|---|---|---|
-| Sol | 0,12′ | 0,39′ |
-| Luna | 0,39′ | 0,78′ |
-| Mercurio, Venus, Marte | < 0,5′ | 1,7′ |
-| Urano, Neptuno, Plutón | < 1,6′ | 4,4′ |
-| Júpiter y Saturno | 3-5′ | 11,5′ |
-| Casas de Plácido | — | 0,6″ |
-| Ayanāṁśa Lahiri | — | 0,0002″ |
+```
+main.go                 servidor y endpoints; aquí se declara la versión
+internal/efem/          astronomía compartida: sol, luna, planetas, casas, tiempo, orto
+internal/occidental/    palabras clave de Hone y predicción
+internal/jyotisha/      sidéreo, nakṣatras, vargas, daśās, aṣṭakavarga, ṣaḍbala,
+                        pañcāṅga, arudhas, praśna, yogas, tránsitos
+internal/lugares/       41.451 poblaciones y husos históricos
+internal/guardadas/     persistencia de cartas
+web/                    interfaz y los dos cursos
+pruebas/                comprobaciones de la interfaz, que Go no puede hacer
+empaquetar/             los paquetes de macOS y Linux
+```
 
-En 660 posiciones comprobadas, **el error no movió ningún planeta de signo**.
-
-En latitudes polares detecta que Plácido no puede resolverse y cae a casas iguales avisándolo.
-
-## Compilar
+Compilar:
 
 ```
 go build -o astro .
 ```
 
-Para las demás plataformas:
+**Datos de terceros:** lugares de [GeoNames](https://www.geonames.org) (CC BY 4.0); husos de la
+base IANA, embebida vía `time/tzdata`.
+
+---
+
+## Comprobaciones
 
 ```
-GOOS=linux   GOARCH=amd64 go build -ldflags="-s -w" -o dist/astro-linux-amd64 .
-GOOS=darwin  GOARCH=arm64 go build -ldflags="-s -w" -o dist/astro-darwin-arm64 .
-GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/astro-windows-amd64.exe .
+./verificar.sh
 ```
 
-`cmd/probar` y `cmd/jprobar` son las herramientas con las que se midió el motor contra
-pyswisseph. Si tocas la parte astronómica, repite la verificación con ellas.
+Compila, pasa `vet`, corre los 47 tests con cobertura, y luego lo que Go no alcanza:
 
-## Estructura
+| | |
+|---|---|
+| sintaxis del JavaScript | `node --check` |
+| `pruebas/estructura.mjs` | las costuras de la página: elementos que el JS pide contra los que el HTML tiene, identificadores repetidos, pestañas sin sección, variables de color sin definir, etiquetas sin cerrar, y que la versión esté declarada una sola vez |
+| `pruebas/castellano.mjs` | frases en castellano escritas a mano dentro del código |
+| paridad de idiomas | que las dos tablas tengan las mismas claves y todas las pestañas nombre |
+| el curso | que los 35 módulos existan en los dos idiomas |
+| `pruebas/interfaz.mjs` | **ejecuta la interfaz** contra un DOM de mentira con datos reales del servidor, en las dos tradiciones y los dos idiomas |
 
-```
-internal/efem/       astronomía compartida por las dos tradiciones
-internal/occidental/ sistema de palabras clave
-internal/jyotisha/   sidéreo, nakṣatras, vargas, daśās, yogas, tránsitos
-internal/lugares/    41.451 poblaciones y husos históricos
-internal/guardadas/  persistencia de cartas
-web/                 interfaz y los dos cursos
-```
+Cobertura: occidental 97,7% · lugares 92,9% · efem 93,1% · jyotiṣa 91,5% · guardadas 84,1%.
 
-## Datos de terceros
+`.github/workflows/comprobar.yml` lo ejecuta todo en cada push, más la compilación cruzada para
+las cinco combinaciones de sistema y arquitectura.
 
-- Lugares: [GeoNames](https://www.geonames.org) (CC BY 4.0)
-- Husos horarios: base IANA, embebida vía `time/tzdata`
+### Por qué existe tanta comprobación de la interfaz
 
-## Lectura
+El JavaScript viaja embebido con `go:embed`, así que **el compilador de Go no lo mira**. Estos tres
+fallos compilaban, arrancaban, respondían a todos los endpoints y pasaban los tests:
 
-Las dos tradiciones tienen motor de interpretación, y los dos componen la frase a partir de sus
-piezas en lugar de guardar textos prefabricados.
+- Un literal de plantilla mal cerrado. Un error de sintaxis tumba el fichero entero: la interfaz
+  no pintaba nada. Salió en dos versiones publicadas.
+- `var(--acento)`, `var(--linea)` y `var(--texto)`, que no existen. Una variable CSS sin definir
+  no da error: la declaración se vuelve inválida y la propiedad cae a su valor inicial, que para
+  un `background` es transparente. Las barras se dibujaban con su ancho exacto y en transparente.
+- Los botones de estilo védico salían en occidental. El JavaScript los escondía con `hidden`, y
+  `hidden` no hacía nada: la regla `[hidden]{display:none}` del navegador tiene la especificidad
+  de una clase, y `.estilos{display:flex}` la anulaba. La página ya declara
+  `[hidden]{display:none!important}`, que cubre a todos los elementos y a los que vengan.
 
-**Occidental** — `internal/occidental/claves.go`. Sistema de Palabras Clave de Margaret Hone:
-función del planeta + modo del signo + terreno de la casa + dignidad, más los regentes, que
-convierten un aspecto suelto en un argumento. Detecta cuándo un planeta recibe a la vez aspectos
-duros y blandos y lo declara como contradicción en lugar de elegir un lado.
+Ninguno lo habría cazado un test de datos. Cada uno dejó una comprobación detrás.
 
-**Jyotiṣa** — `internal/jyotisha/lectura.go`. Función del graha + modo del rāśi + terreno del
-bhāva + nakṣatra + dignidad, y sobre todo la **cadena de señores**, que es como razona jyotiṣa:
-de qué depende un asunto, y de qué depende aquello. Añade dṛṣṭi por signo entero, la daśā que
-corre ahora y los kārakas de Jaimini. Marca como disputado el bhāva que reciben benéficos y
-maléficos a la vez.
-
-Ninguno de los dos sintetiza. Los dos dicen por qué.
-
-## Pañcāṅga y lagnas especiales
-
-Los cinco miembros del calendario hindú: tithi con su quincena, vāra, nakṣatra
-con su pada, yoga y karaṇa, cada uno con lo que lleva recorrido. El tithi y el
-karaṇa salen de la diferencia entre la Luna y el Sol, así que el ayanāṁśa se
-cancela; el yoga sale de la suma y no se cancela.
-
-Los tres lagnas especiales —Bhāva, Horā y Ghaṭī— se cuentan como tiempo
-transcurrido desde el amanecer, así que hacen falta salida y puesta del Sol.
-Están en `internal/efem/orto.go`, por el método de Meeus con dos iteraciones:
-el error queda por debajo del medio minuto y en latitudes polares devuelve que
-no hay orto en lugar de inventarse uno.
-
-Y los arudha padas de los doce bhāvas, con el Arudha Lagna y el Upapada.
-
-## Aṣṭakavarga
-
-Las ocho tablas de Parāśara, con su bhinnāṣṭakavarga por graha y el
-sarvāṣṭakavarga sumado. Las tablas se comprueban solas: los siete BAV tienen
-que sumar exactamente 337, y hay un test que falla si al teclearlas se coló un
-número de más o de menos.
-
-## Ṣaḍbala
-
-Las seis fuerzas en virūpas: sthāna (con ucca, saptavargaja sobre siete vargas
-y amistad compuesta, ojayugma, kendrādi y drekkāṇa), dig, kāla (nathonnatha,
-pakṣa, tribhāga, señores del día y de la hora, ayana), cheṣṭā por los ocho
-estados del movimiento, naisargika y dṛk.
-
-Y el **yuddha bala**: cuando dos de los cinco planetas quedan a menos de un
-grado están en guerra, y la diferencia de fuerza se reparte según sus diámetros
-aparentes. Gana el que más ṣaḍbala lleva acumulado — la tradición usa la
-latitud, y ese cambio está declarado en el código. Sale en 8 de cada 100 cartas.
-
-Aparte va el **bhāva bala**, que contesta otra pregunta: no cuánto puede un
-graha sino cuánto puede un asunto. Tres partes: la fuerza del señor de la casa
-—que es la que pesa con diferencia—, si la ocupan los grahas que esa casa pide,
-y quién la mira.
-
-Lo que se muestra no es la cifra bruta sino la razón entre lo que cada graha
-saca y lo que se le exige, porque el listón es distinto para cada uno.
-
-## Nodo medio o verdadero
-
-Por defecto el medio, que es lo más extendido. La casilla de la pestaña de
-carta cambia al verdadero, que oscila alrededor del medio hasta grado y medio
-y mueve a Rāhu de pada. Las daśās no cambian: cuelgan del nakṣatra de la Luna.
-
-## Predicción occidental
-
-El módulo 12 enseña tránsitos, progresiones secundarias y revolución solar, y
-hasta ahora el programa lo explicaba sin hacerlo. Ya están las tres, en
-`internal/occidental/prediccion.go`.
-
-- **Tránsitos** — solo los lentos, de Marte a Plutón: los rápidos marcan días y
-  no periodos. Orbe estrecho a propósito (1,5° los aspectos mayores, 0,4° los
-  menores; con el mismo orbe la lista se llenaba de sesquicuadraturas y el
-  tránsito que importaba quedaba enterrado). Dice si aplica o separa, y si el
-  planeta va a retrogradar encima del punto y pasar tres veces.
-- **Progresiones secundarias** — un día después del nacimiento por año de vida.
-- **Revolución solar** — el instante en que el Sol vuelve a su grado natal, por
-  bisección.
-
-Y lo que las une, que es lo que el módulo 12 pide de verdad: **las
-convergencias**. Un periodo importa cuando dos técnicas DISTINTAS señalan el
-mismo punto natal. Dos progresiones sobre el mismo sitio son una voz repetida y
-no cuentan — es la regla del módulo 9 aplicada al tiempo. Cuando no coincide
-nada, lo dice en lugar de rellenar.
-
-## La pestaña de comparar
-
-Es la única pantalla donde las dos tradiciones aparecen juntas, y enseña las
-**dos** diferencias, no una:
-
-- El **zodíaco**: tropical contra sidéreo, con el ayanāṁśa que los separa y qué
-  cuerpos cambian de signo por él.
-- Las **casas**: Plácido, que las hace desiguales y depende de la latitud,
-  contra el signo entero. Esta suele pesar más y casi nunca se cuenta. En la
-  carta de prueba cambian de casa 6 de 9 cuerpos y de signo solo 4.
-
-Respeta el selector de nodo, para que Rāhu no salga en un sitio en una pestaña
-y en otro en la de al lado.
-
-## El switch de idioma
-
-Cambiar de idioma rehace **todo** lo que hay montado, no solo lo que se está
-mirando: las pestañas ocultas guardan su contenido y asomarían en el idioma
-anterior al abrirlas. `repintarTodo()` vuelve a pintar los rótulos, el índice
-del curso, el módulo que estuviera abierto, la lista de guardadas, el huso
-resuelto, su panel de historia, la comparación, el ejercicio, la carta y la
-lectura.
-
-Y como parte del texto lo compone el servidor —los yogas, la lectura entera con
-sus fuentes— no basta con repintar: hay que volver a pedirlo con el idioma
-nuevo.
-
-El ejercicio de cálculo a mano se repinta guardando antes lo que el alumno
-lleve escrito y devolviéndoselo después. Perder sus cuentas por tocar el switch
-sería una faena.
+---
 
 ## Empaquetar
 
@@ -241,173 +299,19 @@ sería una faena.
 ./empaquetar/todo.sh
 ```
 
-Comprueba primero y, si algo falla, no publica nada. Después construye lo de
-macOS, lo de Linux y los binarios sueltos de Windows y Linux.
+Comprueba primero y, si algo falla, **no construye nada**. Después arma el paquete de macOS, el de
+Linux y los binarios sueltos, y dice el comando exacto para publicar la versión que acaba de
+construir.
 
-Existe porque los venía compilando a mano cada vez, y lo que se hace a mano se
-olvida: el paquete de Linux se quedó tres versiones atrás sin que nada avisara,
-y encima llevaba dentro los binarios de macOS.
+Existe porque los venía compilando a mano cada vez, y lo que se hace a mano se olvida: el paquete
+de Linux se quedó tres versiones atrás sin que nada avisara, y encima llevaba dentro los binarios
+de macOS.
 
-Los dos paquetes llevan un LEEME. El de macOS explica lo de la cuarentena de
-Gatekeeper —la aplicación no está firmada, así que al bajarla el sistema se
-niega a abrirla— con el `xattr -dr` y la alternativa sin terminal. El de Linux
-trae un lanzador que elige amd64 o arm64 mirando `uname`.
-
-## Dónde se guardan las cartas
-
-En el directorio de configuración del sistema, dentro de `astro/`. Con la
-variable `ASTRO_DIR` se manda a otro sitio — sirve para llevar el programa en
-un pendrive con sus cartas dentro, y para que los tests no escriban en las del
-usuario.
-
-## Los tests
-
-```
-go test ./...
-```
-
-Lo que mide la astronomía no es el motor contra sí mismo —eso solo detecta
-cambios, no errores— sino contra **Swiss Ephemeris**, que es la referencia con
-la que se compara todo el mundo. Los valores están clavados en
-`internal/efem/referencia_test.go`, generados por
-`pruebas/generar_referencia.py`. Si un test falla, el que está mal es el motor.
-
-Sobre 690 posiciones repartidas entre 1800 y 2100:
-
-| | dentro de 1800-2050 | fuera, hasta 2100 |
-|---|---|---|
-| Sol | 0,37′ | 0,28′ |
-| Luna | 0,74′ | 0,88′ |
-| Saturno | 11,0′ | 18,6′ |
-| resto de planetas | < 7,1′ | < 3,8′ |
-
-Saturno es el peor porque la gran desigualdad con Júpiter no cabe en unos
-elementos keplerianos. La tabla de Standish que usa el motor está dada para
-1800-2050, y fuera se degrada; por eso el test mide las dos ventanas por
-separado y no afloja el margen de la buena para tapar la mala.
-
-Y por encima de todo eso, lo que de verdad importa en astrología:
-**ninguna de las 690 posiciones cambia de signo.** Diez minutos de arco no
-mueven a nadie de casa; salir en otro signo, sí.
-
-Casas de Plácido contra Swiss Ephemeris: Ascendente 2,9″, Medio Cielo 2,2″,
-cúspides 3,7″. Ayanāṁśa Lahiri: 0,0002″. Salida y puesta del Sol: 35 segundos.
-
-Escribiendo estos tests aparecieron dos cosas: el día juliano estaba mal para
-fechas anteriores al 15 de octubre de 1582 —se aplicaba la regla gregoriana de
-los siglos siempre, y para el año 837 eran cuatro días de desfase—, y la
-referencia de orto la estaba pidiendo con otro criterio de altura, así que los
-números no eran comparables.
-
-## Dos fallos que no cazaba nada
-
-### El `hidden` que no escondía
-
-Los botones de estilo de carta védica —Norte y Sur de la India— salían también
-en occidental. El JavaScript los escondía con `hidden`, y `hidden` no hacía
-nada.
-
-`hidden` esconde porque el navegador trae `[hidden]{display:none}`. Esa regla
-tiene la especificidad de una clase, y **el estilo del autor gana al del
-navegador**: la clase `.estilos{display:flex}` la anulaba, sin error y sin
-aviso. Ahora la página declara `[hidden]{display:none!important}`, así que no le
-puede volver a pasar a ningún elemento.
-
-### Las variables de color inventadas
-
-Escribí `var(--acento)`, `var(--linea)` y `var(--texto)`. No existen: las
-variables de este tema se llaman `--ac`, `--rule` e `--ink`.
-
-Una variable CSS sin definir **no da error**. La declaración se vuelve inválida
-y la propiedad cae a su valor inicial, que para un `background` es
-transparente. Así que las barras del pañcāṅga, las del sarvāṣṭakavarga y las
-del bhāva bala se dibujaban con su ancho correcto y **no se veían**. Compilaba,
-arrancaba, respondía, y las pruebas pasaban todas: ninguna mira colores.
-
-De ahí sale `pruebas/estructura.mjs`, que revisa las costuras de la página: lo
-que el JavaScript pide contra lo que el HTML tiene, identificadores repetidos,
-pestañas sin sección y secciones sin pestaña, variables de color usadas contra
-definidas, y el equilibrio de las etiquetas.
-
-## La versión
-
-Se escribe en un solo sitio, `main.go`. De ahí salen el pie de la página,
-`/api/version` y la opción `-version` del binario. Si el pie dijera una cosa y
-el binario otra, no habría manera de saber qué se está ejecutando.
-
-```
-./astro -version        →  astro 1.8.0
-```
-
-## Integración continua
-
-`.github/workflows/comprobar.yml` ejecuta en cada push lo mismo que
-`verificar.sh`: compila, `vet`, los tests con cobertura, la sintaxis del
-JavaScript, el detector de castellano a mano, la paridad de idiomas, que el
-curso esté traducido entero, que la interfaz se ejecute de verdad, y que el
-binario compile para las cinco combinaciones de sistema y arquitectura.
-
-Existe porque los tests no servían de mucho dependiendo de que yo me acordara
-de correrlos.
-
-## Comprobar antes de publicar
-
-```
-./verificar.sh
-```
-
-Compila, pasa `vet` y los tests, comprueba la sintaxis del JavaScript, que los
-dos idiomas tengan las mismas claves, que los 35 módulos del curso existan en
-inglés, que los endpoints respondan, y **ejecuta la interfaz entera** contra un
-DOM de mentira con datos reales.
-
-Lo último es lo que más falta hacía. El JavaScript viaja embebido con
-`go:embed` y el compilador de Go no lo mira: un paréntesis de más ahí compila,
-arranca, responde a todos los endpoints — y deja la interfaz muerta sin decir
-nada. Pasó, y en dos versiones publicadas.
-
-## Otras daśās
-
-La vimśottarī es la que se usa siempre, pero no es la única, y las clásicas
-recomiendan contrastarla. Cuando dos sistemas señalan el mismo periodo la
-lectura se sostiene; cuando solo lo dice uno, es un murmullo.
-
-- **Aṣṭottarī** — 108 años entre ocho grahas. Sin Ketu: eso es lo que la
-  distingue, y el reparto de nakṣatras por señor tampoco es regular.
-- **Yoginī** — 36 años entre ocho yoginīs. Es corta, así que una vida la
-  recorre tres veces.
-- **Cara**, la de Jaimini — funciona con otra lógica: no cuelga de la Luna sino
-  de los rāśis, y la duración de cada periodo sale de contar del signo al sitio
-  donde está su señor, hacia delante o hacia atrás según sea impar o par.
-
-## Praśna
-
-La carta del instante en que se hace la pregunta, no la del nacimiento. Es el
-recurso clásico cuando no hay hora fiable — que, como dice el módulo 2, es casi
-siempre.
-
-Lo primero que hace no es contestar: es **decidir si la pregunta se puede
-contestar**. El lagna en los tres primeros grados de su rāśi (el asunto acaba
-de arrancar), en los tres últimos (ya se resolvió), en gaṇḍānta, o la Luna en
-gaṇḍānta — cualquiera de esas y la respuesta es «espera y vuelve a preguntar».
-Que es una respuesta completa, igual que «hasta aquí llega la carta».
-
-Después juzga el bhāva del asunto: su señor y dónde está, quién lo ocupa, si
-Júpiter lo mira, si el señor del lagna y el del asunto se relacionan, y los
-bindus del aṣṭakavarga de ese rāśi — que es el único número que da el sistema y
-sirve justo para no decidir a ojo.
-
-## El ejercicio a mano, en las dos tradiciones
-
-`/api/verificar` corrige el cálculo occidental y `/api/verificarved` el védico.
-Los tres primeros pasos son los mismos, porque la astronomía no cambia entre
-tradiciones; jyotiṣa añade restar el ayanāṁśa y sacar el Lagna sidéreo. El
-corrector reconoce el error clásico de **restar el ayanāṁśa dos veces**, que es
-el que más se comete al empezar, y lo dice con esas palabras en lugar de
-limitarse a marcar el paso en rojo.
+---
 
 ## Pendiente
 
-Nada declarado. Lo único que queda sin comprobar es el aspecto en un navegador
-de verdad: todo se verifica sin él (ver más abajo), y eso caza lógica y
-traducciones pero no dibujo.
+Nada declarado.
+
+Lo único que el proyecto no puede comprobarse a sí mismo es **el aspecto**. Todo se verifica sin
+navegador, y eso caza lógica, traducciones y estructura, pero no si algo se ve torcido.
