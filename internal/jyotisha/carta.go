@@ -23,6 +23,10 @@ type Graha struct {
 	Retro     bool    `json:"retro"`
 	Gandanta  bool    `json:"gandanta"`
 	Posicion  string  `json:"posicion"`
+	Mula      bool    `json:"mula"`
+	Combusto  bool    `json:"combusto"`
+	DelSol    float64 `json:"delSol"`
+	DigBala   bool    `json:"digBala"`
 }
 
 type Bhava struct {
@@ -61,6 +65,8 @@ type Carta struct {
 	Karakas    map[string]string  `json:"karakas"`
 	Dasas      []Periodo          `json:"dasas"`
 	Yogas      []string           `json:"yogas"`
+	Karakamsa  string             `json:"karakamsa"`
+	Gocara     Gocara             `json:"gocara"`
 }
 
 func norm(x float64) float64 {
@@ -244,6 +250,18 @@ func Calcular(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64) Carta {
 			Dignidad: Dignidad(n, l), Retro: b.Retro || n == "Rāhu" || n == "Ketu",
 			Gandanta: Gandanta(l), Posicion: Formato(l)})
 	}
+	// estado fino: mūlatrikoṇa, combustión y dig-bala
+	for i := range c.Grahas {
+		g := &c.Grahas[i]
+		g.Mula = EnMulatrikona(g.Nombre, g.Lon)
+		if g.Nombre != "Sol" {
+			g.Combusto, g.DelSol = Combusto(g.Nombre, g.Lon, pos["Sol"], g.Retro)
+		}
+		g.DigBala = TieneDigBala(g.Nombre, g.Bhava)
+		if g.Mula && g.Dignidad == "signo propio" {
+			g.Dignidad = "mūlatrikoṇa"
+		}
+	}
 	sort.Slice(c.Grahas, func(i, j int) bool {
 		oi, oj := 99, 99
 		for k, g := range Grahas {
@@ -314,40 +332,127 @@ func Calcular(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64) Carta {
 	nac := time.Date(anio, time.Month(mes), dia, hh, mm, 0, 0,
 		time.FixedZone("local", int(tz*3600)))
 	c.Dasas = Vimsottari(pos["Luna"], nac, 9)
+	if ak := c.Karakas["AK"]; ak != "" {
+		for _, g := range c.Grahas {
+			if g.Nombre == ak {
+				c.Karakamsa = Rasis[Varga(g.Lon, 9)]
+			}
+		}
+	}
 	c.Yogas = detectarYogas(c, pos)
+	c.Gocara = Transitos(c.LagnaRasi, int(pos["Luna"]/30), time.Now())
 	return c
 }
 
-// detectarYogas busca las combinaciones más citadas, solo las que se pueden
-// afirmar con seguridad desde las posiciones.
+// detectarYogas busca las combinaciones que se pueden afirmar con seguridad
+// desde las posiciones. No es un catálogo: solo lo comprobable.
 func detectarYogas(c Carta, pos map[string]float64) []string {
 	var y []string
-	kendra := func(a, b int) bool {
-		d := ((a-b)%12 + 12) % 12
-		return d == 0 || d == 3 || d == 6 || d == 9
-	}
 	rLuna := int(pos["Luna"] / 30)
-	if kendra(int(pos["Júpiter"]/30), rLuna) {
-		y = append(y, "Gaja-Kesari: Júpiter en kendra desde la Luna — inteligencia y protección")
+
+	// Gaja-kesari: Guru en kendra DESDE LA LUNA, no desde el Lagna
+	if Kendra(int(pos["Júpiter"]/30), rLuna) {
+		y = append(y, "Gaja-kesari — Júpiter en kendra desde la Luna: inteligencia, buen nombre, protección")
 	}
-	// nīca-bhaṅga: graha debilitado cuyo señor de exaltación o de signo está en kendra del Lagna
+
+	// Pañca-mahāpuruṣa: exaltado o en signo propio Y en kendra desde el Lagna
+	for _, g := range c.Grahas {
+		nom, ok := mahapurusha[g.Nombre]
+		if !ok {
+			continue
+		}
+		fuerte := g.Dignidad == "exaltado" || g.Dignidad == "signo propio" || g.Dignidad == "mūlatrikoṇa"
+		if fuerte && (g.Bhava == 1 || g.Bhava == 4 || g.Bhava == 7 || g.Bhava == 10) {
+			y = append(y, nom+" yoga — "+g.Nombre+" "+g.Dignidad+" en kendra (casa "+
+				itoa(g.Bhava)+"): uno de los cinco mahāpuruṣa")
+		}
+	}
+
+	// Rāja-yoga: relación entre señor de kendra y señor de trikona
+	senorDe := func(h int) string { return SenorRasi[(c.LagnaRasi+h-1)%12] }
+	kendras := []int{1, 4, 7, 10}
+	trikonas := []int{1, 5, 9}
+	vistos := map[string]bool{}
+	for _, k := range kendras {
+		for _, tr := range trikonas {
+			if k == tr {
+				continue
+			}
+			a, b := senorDe(k), senorDe(tr)
+			if a == b {
+				clave := "solo:" + a
+				if !vistos[clave] {
+					vistos[clave] = true
+					y = append(y, "Rāja-yoga — "+a+" rige a la vez un kendra ("+itoa(k)+
+						") y un trikona ("+itoa(tr)+")")
+				}
+				continue
+			}
+			ra, rb := int(pos[a]/30), int(pos[b]/30)
+			clave := a + "-" + b
+			if vistos[clave] || vistos[b+"-"+a] {
+				continue
+			}
+			switch {
+			case ra == rb:
+				vistos[clave] = true
+				y = append(y, "Rāja-yoga — los señores de la "+itoa(k)+" y la "+itoa(tr)+
+					" ("+a+" y "+b+") están juntos en "+Rasis[ra])
+			case seMiran(a, b, ra, rb):
+				vistos[clave] = true
+				y = append(y, "Rāja-yoga — los señores de la "+itoa(k)+" y la "+itoa(tr)+
+					" ("+a+" y "+b+") se miran mutuamente")
+			}
+		}
+	}
+
+	// Nīca-bhaṅga: debilidad cancelada
 	for _, g := range c.Grahas {
 		if g.Dignidad != "debilitado" {
 			continue
 		}
 		sd := SenorRasi[g.RasiIdx]
-		if kendra(int(pos[sd]/30), c.LagnaRasi) {
-			y = append(y, g.Nombre+" debilitado con nīca-bhaṅga: la debilidad se cancela")
+		if Kendra(int(pos[sd]/30), c.LagnaRasi) || Kendra(int(pos[sd]/30), rLuna) {
+			y = append(y, "Nīca-bhaṅga — "+g.Nombre+" está debilitado pero "+sd+
+				", señor de su signo, ocupa un kendra: la debilidad se cancela")
 		}
 	}
-	// grahas solitarios en kendra desde el Lagna
+
+	// Kemadruma: Luna sin grahas en las casas contiguas
+	solo := true
 	for _, g := range c.Grahas {
-		if g.Bhava == 1 || g.Bhava == 4 || g.Bhava == 7 || g.Bhava == 10 {
-			if g.Dignidad == "exaltado" || g.Dignidad == "signo propio" {
-				y = append(y, g.Nombre+" "+g.Dignidad+" en kendra (casa "+
-					string(rune('0'+g.Bhava/10))+string(rune('0'+g.Bhava%10))+"): rāja-yoga")
-			}
+		if g.Nombre == "Luna" || g.Nombre == "Rāhu" || g.Nombre == "Ketu" {
+			continue
 		}
+		d := ((g.RasiIdx-rLuna)%12 + 12) % 12
+		if d == 0 || d == 1 || d == 11 {
+			solo = false
+		}
+	}
+	if solo {
+		y = append(y, "Kemadruma — la Luna no tiene grahas a los lados ni consigo. "+
+			"Se lee como soledad mental, pero se cancela con facilidad: no alarmes con esto")
 	}
 	return y
 }
+
+// seMiran indica si dos grahas se aspectan mutuamente por dṛṣṭi de signo.
+func seMiran(a, b string, ra, rb int) bool {
+	mira := func(g string, desde, hasta int) bool {
+		for _, d := range Drishti(g) {
+			if (desde+d-1)%12 == hasta {
+				return true
+			}
+		}
+		return false
+	}
+	return mira(a, ra, rb) && mira(b, rb, ra)
+}
+
+func itoa(n int) string {
+	if n < 10 {
+		return string(rune('0' + n))
+	}
+	return string(rune('0'+n/10)) + string(rune('0'+n%10))
+}
+

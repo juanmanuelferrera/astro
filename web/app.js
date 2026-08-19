@@ -134,10 +134,14 @@ function tablasVed(c){const x=t();
     <tr><td>ayanāṁśa</td><td colspan="2">${c.ayanamsa.toFixed(4)}°</td></tr></tbody></table></div>`;
   h+=`<div class="caja"><h3>${x.grahas}</h3><table><thead><tr><th colspan="2">${x.grahas}</th><th>${x.posicion}</th><th>${x.nak}</th><th class="num">${x.pada}</th><th class="num">${x.casa}</th><th>${x.estado}</th></tr></thead><tbody>`;
   c.grahas.forEach(g=>{const cl=g.dignidad==="exaltado"?"exalt":g.dignidad==="debilitado"?"debil":"";
-    h+=`<tr><td class="gl">${g.glifo}</td><td>${g.nombre}${g.retro?' ℞':''}</td><td>${g.posicion}${g.gandanta?' <span class="gan">⚠</span>':''}</td><td>${g.nak}</td><td class="num">${g.pada}</td><td class="num">${g.bhava}</td><td class="${cl}">${g.dignidad}</td></tr>`;});
+    const marcas=[g.combusto?`<span class="debil" title="combusto: a ${g.delSol}° del Sol">☌sol</span>`:"",
+      g.digBala?`<span class="exalt" title="fuerza direccional plena">dig</span>`:""].filter(Boolean).join(" ");
+    h+=`<tr><td class="gl">${g.glifo}</td><td>${g.nombre}${g.retro?' ℞':''}</td><td>${g.posicion}${g.gandanta?' <span class="gan" title="gaṇḍānta">⚠</span>':''}</td><td>${g.nak}</td><td class="num">${g.pada}</td><td class="num">${g.bhava}</td><td class="${cl}">${g.dignidad} ${marcas}</td></tr>`;});
   h+=`</tbody></table></div><div class="caja"><h3>${x.bhavas}</h3><table><thead><tr><th class="num">${x.casa}</th><th>Rāśi</th><th>${x.senor}</th><th>${x.alojado}</th><th>${x.ocupan}</th><th>${x.aspectan}</th></tr></thead><tbody>`;
   c.bhavas.forEach(b=>h+=`<tr><td class="num">${b.numero}</td><td>${b.rasi}</td><td>${b.senor}</td><td>${x.casa} ${b.senorEn}</td><td>${(b.ocupan||[]).join(" ")||"—"}</td><td style="color:var(--muted)">${(b.aspectan||[]).join(" ")||"—"}</td></tr>`);
-  h+=`</tbody></table></div><div class="caja"><h3>${x.karakas}</h3><table><tbody>`;
+  h+=`</tbody></table></div><div class="caja"><h3>${x.karakas}</h3>
+    ${c.karakamsa?`<p style="margin:0 0 8px;color:var(--muted);font-size:.85rem">Karakāṁśa — el Ātmakāraka cae en <b style="color:var(--ink)">${c.karakamsa}</b> en el navāṁśa. Se usa como tercer ascendente para el dharma.</p>`:""}
+    <table><tbody>`;
   const kn={AK:"Ātmakāraka",AmK:"Amātyakāraka",BK:"Bhrātṛkāraka",MK:"Mātṛkāraka",PiK:"Pitṛkāraka",PK:"Putrakāraka",GK:"Ñātikāraka"};
   Object.keys(kn).forEach(k=>h+=`<tr><td><b>${k}</b></td><td>${c.karakas[k]||"—"}</td><td style="color:var(--muted)">${kn[k]}</td></tr>`);
   h+=`</tbody></table></div>`;
@@ -174,10 +178,20 @@ function pintarVargas(c){const d={D1:"la vida tal como se vive",D2:"riqueza y su
   D30:"males",D60:"karma acumulado"};
   $("#vg").innerHTML=Object.keys(c.vargas).map(k=>{const gs=c.vargas[k],lg=gs.find(g=>g.nombre==="Lagna");
     return `<div class="vg"><h4>${k}</h4><p>${d[k]||""}</p>${cuadroVed(gs.filter(g=>g.nombre!=="Lagna"),lg?lg.rasiIdx:0,k)}</div>`;}).join("");}
+function pintarGocara(c){const g=c.gocara;if(!g)return "";
+  let h=`<div class="caja"><h3>Sade Sati</h3>`;
+  h+=g.sade.activo
+    ? `<p class="yoga"><b>Activo — fase ${g.sade.fase}.</b> ${g.sade.nota}${g.sade.hasta?` Sale hacia <b>${g.sade.hasta}</b>.`:""}</p>`
+    : `<p style="margin:0;color:var(--muted)">${g.sade.nota}${g.sade.desde?` El próximo empieza hacia <b style="color:var(--ink)">${g.sade.desde}</b>.`:""}</p>`;
+  h+=`</div><div class="caja"><h3>Tránsitos de hoy · ${g.fecha}</h3><table>
+    <thead><tr><th colspan="2">Graha</th><th>Posición</th><th class="num">desde Lagna</th><th class="num">desde Luna</th></tr></thead><tbody>`;
+  g.transitos.forEach(t=>h+=`<tr><td class="gl">${t.glifo}</td><td>${t.graha}${t.retro?' ℞':''}</td><td>${t.posicion}</td><td class="num">${t.desdeLagna}</td><td class="num">${t.desdeLuna}</td></tr>`);
+  return h+`</tbody></table></div>`;}
+
 function pintarDasas(c){let h=`<div class="caja"><h3>Vimśottarī</h3><div class="dasa">`;
   c.dasas.forEach(p=>{h+=`<div class="p ${p.actual?'act':''}"><span>${p.senor}</span><span>${p.desde} → ${p.hasta}</span><span>${p.anios}</span></div>`;
     if(p.actual&&p.sub)p.sub.forEach(b=>h+=`<div class="p b ${b.actual?'act':''}"><span>${b.senor}</span><span>${b.desde} → ${b.hasta}</span><span>${b.anios}</span></div>`);});
-  $("#ds").innerHTML=h+`</div></div>`;}
+  $("#ds").innerHTML=h+`</div></div>`+pintarGocara(c);}
 
 // ═══ comparación: la única pantalla con las dos ═══
 async function comparar(){const x=t();
