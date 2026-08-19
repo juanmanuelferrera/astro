@@ -1,0 +1,8 @@
+# binarios compilados
+/astro
+/dist/
+
+# datos locales del usuario
+/progreso/
+
+.DS_Store
