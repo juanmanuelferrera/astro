@@ -164,10 +164,11 @@ async function levantar(e){if(e)e.preventDefault();
   const [Y,M,D]=$("#fecha").value.split("-"),[H,Mi]=$("#hora").value.split(":");
   const extra=TRAD==="jyotisha"?` · ${t().lagnaT} ${DATOS.lagnaPos}`:"";
   $("#ficha").innerHTML=`<h2>${$("#ciudad").value||"—"}</h2><p>${D}/${M}/${Y} · ${H}:${Mi} · UTC${+$("#tz").value>=0?"+":""}${$("#tz").value} · ${DATOS.ut}${extra}</p>`;
-  render(); if(TRAD==="occidental")leer();}
+  render(); leer();}
 $("#f").onsubmit=levantar;
 
-async function leer(){const L=await (await fetch("/api/lectura?"+params())).json();
+async function leer(){const url=(TRAD==="jyotisha"?"/api/lecturaved?":"/api/lectura?")+params()+"&lang="+LANG;
+  const L=await (await fetch(url)).json();
   const cats={};L.frases.forEach(f=>(cats[f.categoria]=cats[f.categoria]||[]).push(f));
   let h=`<div class="caja"><h3>${t().dominante}</h3><p style="margin:0">${L.dominante}</p></div>`;
   for(const c in cats){h+=`<div class="caja"><h3>${c}</h3>`;
@@ -206,11 +207,12 @@ async function comparar(){const x=t();
 
 // ═══ curso ═══
 function pintarCurso(){const x=t();
-  const nota = LANG === "en" ? `<p style="grid-column:1/-1;margin:0 0 6px;color:var(--muted);font-size:.85rem">${x.cursoSoloEs}</p>` : "";
-  $("#lista").innerHTML=nota+CURSOS[TRAD].map(([f,ti,n])=>
+  const nota = "";   // los módulos ya existen en los dos idiomas
+  $("#lista").innerHTML=nota+(LANG==="en"?CURSOS_EN:CURSOS_ES)[TRAD].map(([f,ti,n])=>
     `<a href="#" data-f="${f}"><b>${n?(n==="·"?x.extra:x.modulo+" "+n):x.indice}</b>${ti}</a>`).join("");
   $("#lista").onclick=async ev=>{const a=ev.target.closest("a");if(!a)return;ev.preventDefault();
-    const md=await (await fetch(`curso/${TRAD}/${a.dataset.f}.md`)).text();
+    const sub=LANG==="en"?"en/":"";   // los módulos traducidos viven en en/
+    const md=await (await fetch(`curso/${TRAD}/${sub}${a.dataset.f}.md`)).text();
     $("#texto").hidden=false;$("#texto").innerHTML=markdown(md);
     $("#texto").scrollIntoView({behavior:"smooth",block:"start"});};}
 function markdown(tx){const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");

@@ -108,10 +108,12 @@ const T = {
 // Pestañas por tradición: cada modo enseña solo lo suyo.
 const NAV = {
   occidental: ["carta", "lectura", "comparar", "curso", "ejercicio"],
-  jyotisha:   ["carta", "vargas", "dasas", "comparar", "curso"],
+  jyotisha:   ["carta", "lectura", "vargas", "dasas", "comparar", "curso"],
 };
 
-const CURSOS = {
+// Los módulos, con su título en cada idioma. El fichero es el mismo nombre en
+// los dos: el inglés vive en la subcarpeta en/.
+const CURSOS_ES = {
   occidental: [["00-mapa","Mapa del curso",""],["01-el-cielo","El cielo desde un punto","1"],
     ["02-la-hora","La hora","2"],["03-el-calculo","El cálculo","3"],["04-angulos","Los cuatro ángulos","4"],
     ["05-posiciones","Posiciones","5"],["06-casas","Casas y regentes","6"],["07-aspectos","Aspectos","7"],
@@ -127,3 +129,21 @@ const CURSOS = {
     ["11-vargas","Las vargas","11"],["12-dasas","Las daśās","12"],["13-oficio","Oficio y límites","13"],
     ["14-karakas","Los kārakas","14"],["15-yogas","Los yogas","15"],["16-profundizar","Profundizar","16"]],
 };
+
+const CURSOS_EN = {
+  occidental: [["00-mapa","Map of the course",""],["01-el-cielo","The sky from one point","1"],
+    ["02-la-hora","The hour","2"],["03-el-calculo","The calculation","3"],["04-angulos","The four angles","4"],
+    ["05-posiciones","Positions","5"],["06-casas","Houses and rulers","6"],["07-aspectos","Aspects","7"],
+    ["08-dignidades","Dignities","8"],["09-combinar","Combining and counteracting","9"],
+    ["10-sintesis","Synthesis","10"],["11-profundizar","Going deeper","11"],["12-prediccion","Prediction","12"],
+    ["13-oficio","The craft and its limits","13"],["14-jyotisha","The sidereal zodiac","14"],
+    ["corta","The short way, in five blocks","·"],["plan-semana","A one-week plan","·"],
+    ["motor-profundizacion","The drill-down engine","·"]],
+  jyotisha: [["00-mapa","Map of the course",""],["01-el-cielo","The sky from one point","1"],
+    ["02-la-hora","The hour","2"],["03-el-calculo","The calculation","3"],["04-angulos","The angles","4"],
+    ["05-rasis","The rāśis","5"],["06-nakshatras","The nakṣatras","6"],["07-bhavas","The bhāvas","7"],
+    ["08-grahas","The grahas","8"],["09-drishti","Dṛṣṭi: the gaze","9"],["10-dignidades","Dignity and strength","10"],
+    ["11-vargas","The vargas","11"],["12-dasas","The daśās","12"],["13-oficio","The craft and its limits","13"],
+    ["14-karakas","The kārakas","14"],["15-yogas","The yogas","15"],["16-profundizar","Going deeper","16"]],
+};
+

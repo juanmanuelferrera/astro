@@ -117,9 +117,26 @@ web/                 interfaz y los dos cursos
 - Lugares: [GeoNames](https://www.geonames.org) (CC BY 4.0)
 - Husos horarios: base IANA, embebida vía `time/tzdata`
 
+## Lectura
+
+Las dos tradiciones tienen motor de interpretación, y los dos componen la frase a partir de sus
+piezas en lugar de guardar textos prefabricados.
+
+**Occidental** — `internal/occidental/claves.go`. Sistema de Palabras Clave de Margaret Hone:
+función del planeta + modo del signo + terreno de la casa + dignidad, más los regentes, que
+convierten un aspecto suelto en un argumento. Detecta cuándo un planeta recibe a la vez aspectos
+duros y blandos y lo declara como contradicción en lugar de elegir un lado.
+
+**Jyotiṣa** — `internal/jyotisha/lectura.go`. Función del graha + modo del rāśi + terreno del
+bhāva + nakṣatra + dignidad, y sobre todo la **cadena de señores**, que es como razona jyotiṣa:
+de qué depende un asunto, y de qué depende aquello. Añade dṛṣṭi por signo entero, la daśā que
+corre ahora y los kārakas de Jaimini. Marca como disputado el bhāva que reciben benéficos y
+maléficos a la vez.
+
+Ninguno de los dos sintetiza. Los dos dicen por qué.
+
 ## Pendiente
 
-- Traducir los cursos al inglés (24.640 palabras; la interfaz ya es bilingüe)
 - Ashtakavarga y shadbala
 - Pañcāṅga: tithi, vara, yoga, karaṇa
 - Arudha padas y lagnas especiales de Jaimini

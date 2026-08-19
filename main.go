@@ -37,7 +37,8 @@ func main() {
 	http.HandleFunc("/api/carta", apiCarta)             // occidental
 	http.HandleFunc("/api/vedica", apiVedica)           // jyotiṣa
 	http.HandleFunc("/api/comparar", apiComparar)       // las dos, lado a lado
-	http.HandleFunc("/api/lectura", apiLectura)
+	http.HandleFunc("/api/lectura", apiLectura)         // occidental
+	http.HandleFunc("/api/lecturaved", apiLecturaVed)   // jyotiṣa
 	http.HandleFunc("/api/verificar", apiVerificar)
 	http.HandleFunc("/api/lugares", apiLugares)
 	http.HandleFunc("/api/huso", apiHuso)
@@ -137,7 +138,22 @@ func apiVedica(w http.ResponseWriter, r *http.Request) {
 
 func apiLectura(w http.ResponseWriter, r *http.Request) {
 	a, m, d, h, mi, tz, lat, lo := datos(r)
-	jsonOut(w, occidental.Interpretar(efem.Calcular(a, m, d, h, mi, tz, lat, lo)))
+	jsonOut(w, occidental.Interpretar(efem.Calcular(a, m, d, h, mi, tz, lat, lo), idioma(r)))
+}
+
+// apiLecturaVed es la lectura védica. Razona por cadena de señores, que es lo
+// que en jyotiṣa convierte una posición suelta en una causa.
+func apiLecturaVed(w http.ResponseWriter, r *http.Request) {
+	a, m, d, h, mi, tz, lat, lo := datos(r)
+	jsonOut(w, jyotisha.Interpretar(jyotisha.Calcular(a, m, d, h, mi, tz, lat, lo), idioma(r)))
+}
+
+// idioma lee ?lang= y cae en español si no viene o no se reconoce.
+func idioma(r *http.Request) string {
+	if r.URL.Query().Get("lang") == "en" {
+		return "en"
+	}
+	return "es"
 }
 
 // apiComparar es la única pantalla donde las dos tradiciones aparecen juntas.
