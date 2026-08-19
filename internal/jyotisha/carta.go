@@ -420,7 +420,7 @@ func CalcularOpts(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64, o Opcione
 		senorHora = ordenHoras[(indiceCaldeo(c.Pancanga.SenorVara)+h)%7]
 	}
 	c.Shadbala = CalcShadbala(entradas, c.Lagna, c.MC, esDeDia,
-		c.Pancanga.TithiNum, c.Pancanga.SenorVara, senorHora)
+		c.Pancanga.TithiNum, c.Pancanga.SenorVara, senorHora, c.Bhavas)
 
 	return c
 }

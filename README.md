@@ -164,7 +164,15 @@ y amistad compuesta, ojayugma, kendrādi y drekkāṇa), dig, kāla (nathonnatha
 pakṣa, tribhāga, señores del día y de la hora, ayana), cheṣṭā por los ocho
 estados del movimiento, naisargika y dṛk.
 
-Lo que no está, y se dice en la propia pantalla: yuddha bala y bhāva bala.
+Y el **yuddha bala**: cuando dos de los cinco planetas quedan a menos de un
+grado están en guerra, y la diferencia de fuerza se reparte según sus diámetros
+aparentes. Gana el que más ṣaḍbala lleva acumulado — la tradición usa la
+latitud, y ese cambio está declarado en el código. Sale en 8 de cada 100 cartas.
+
+Aparte va el **bhāva bala**, que contesta otra pregunta: no cuánto puede un
+graha sino cuánto puede un asunto. Tres partes: la fuerza del señor de la casa
+—que es la que pesa con diferencia—, si la ocupan los grahas que esa casa pide,
+y quién la mira.
 
 Lo que se muestra no es la cifra bruta sino la razón entre lo que cada graha
 saca y lo que se le exige, porque el listón es distinto para cada uno.
@@ -193,6 +201,5 @@ nada. Pasó, y en dos versiones publicadas.
 
 ## Pendiente
 
-- Yuddha bala y bhāva bala, lo que falta del ṣaḍbala
 - Daśās distintas de la vimśottarī (aṣṭottarī, yoginī, cara)
 - Praśna: la carta del momento de la pregunta

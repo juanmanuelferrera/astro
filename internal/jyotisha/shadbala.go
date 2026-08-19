@@ -62,6 +62,8 @@ var sieteVargas = []int{1, 2, 3, 7, 9, 12, 30}
 
 type Bala struct {
 	Graha      string  `json:"graha"`
+	Yuddha     float64 `json:"yuddha"` // ajuste por guerra; 0 si no pelea
+	Rival      string  `json:"rival"`  // con quién, si pelea
 	Sthana     float64 `json:"sthana"`
 	Dig        float64 `json:"dig"`
 	Kala       float64 `json:"kala"`
@@ -76,8 +78,9 @@ type Bala struct {
 }
 
 type Shadbala struct {
-	Balas []Bala `json:"balas"`
-	Nota  string `json:"nota"`
+	Balas  []Bala      `json:"balas"`
+	Bhavas []BalaBhava `json:"bhavas"`
+	Nota   string      `json:"nota"`
 }
 
 // EntradaBala es lo que el cálculo necesita saber de cada graha.
@@ -90,7 +93,8 @@ type EntradaBala struct {
 // CalcShadbala. lagna es la longitud sidérea del ascendente, mc la del medio
 // cielo, y esDeDia dice si el nacimiento fue entre el orto y el ocaso.
 func CalcShadbala(gr map[string]EntradaBala, lagna, mc float64,
-	esDeDia bool, tithiNum int, senorVara string, senorHora string) Shadbala {
+	esDeDia bool, tithiNum int, senorVara string, senorHora string,
+	bhavas []Bhava) Shadbala {
 
 	var s Shadbala
 	rasiDe := map[string]int{}
@@ -117,6 +121,33 @@ func CalcShadbala(gr map[string]EntradaBala, lagna, mc float64,
 		s.Balas = append(s.Balas, b)
 	}
 
+	// La guerra se resuelve al final, porque necesita las otras cinco fuerzas
+	// ya sumadas para saber quién gana.
+	previo := map[string]float64{}
+	for _, b := range s.Balas {
+		previo[b.Graha] = b.Total
+	}
+	aj, riv := yuddhaBala(gr, previo)
+	for i := range s.Balas {
+		g := s.Balas[i].Graha
+		if v, ok := aj[g]; ok {
+			s.Balas[i].Yuddha, s.Balas[i].Rival = v, riv[g]
+			s.Balas[i].Total += v
+			s.Balas[i].Rupas = s.Balas[i].Total / virupasPorRupa
+			if s.Balas[i].Minimo > 0 {
+				s.Balas[i].Razon = s.Balas[i].Rupas / s.Balas[i].Minimo
+			}
+		}
+	}
+
+	// El bhāva bala cuelga del ṣaḍbala del señor de cada casa, así que va
+	// después de todo lo anterior.
+	balaDe := map[string]float64{}
+	for _, b := range s.Balas {
+		balaDe[b.Graha] = b.Total
+	}
+	s.Bhavas = calcBhavaBala(bhavas, balaDe, rasiDe)
+
 	// rango por razón, no por total: cada graha se compara con su propio listón
 	for i := range s.Balas {
 		r := 1
@@ -127,7 +158,8 @@ func CalcShadbala(gr map[string]EntradaBala, lagna, mc float64,
 		}
 		s.Balas[i].Rango = r
 	}
-	s.Nota = "Sin yuddha bala (la guerra entre grahas a menos de un grado) ni bhāva bala."
+	s.Nota = "Las seis fuerzas completas, con yuddha bala. El bhāva bala no mide " +
+		"grahas sino casas: cuánto puede el asunto, no cuánto puede el planeta."
 	return s
 }
 
@@ -389,4 +421,130 @@ func drikBala(g string, gr map[string]EntradaBala) float64 {
 		}
 	}
 	return total
+}
+
+// ── Yuddha bala: la guerra entre grahas ──
+//
+// Cuando dos grahas —de Marte a Saturno, nunca las luminarias ni los nodos—
+// quedan a menos de un grado, la tradición dice que están en guerra. Gana el
+// que esté más al norte en latitud; aquí se toma un criterio más simple y
+// declarado: gana el que tenga más ṣaḍbala acumulado.
+//
+// La diferencia de fuerza dividida por la diferencia de diámetros aparentes se
+// suma al vencedor y se resta al vencido. Los diámetros son los clásicos, en
+// minutos de arco.
+var diametro = map[string]float64{
+	"Marte": 9.4, "Mercurio": 6.6, "Júpiter": 190.4, "Venus": 16.6, "Saturno": 158.0,
+}
+
+// enGuerra son los únicos que pueden pelear: los cinco planetas de verdad.
+var enGuerra = []string{"Marte", "Mercurio", "Júpiter", "Venus", "Saturno"}
+
+// yuddhaBala devuelve el ajuste que le toca a cada graha por las guerras en
+// las que anda metido. Devuelve también con quién pelea, para poder decirlo.
+func yuddhaBala(gr map[string]EntradaBala, previo map[string]float64) (map[string]float64, map[string]string) {
+	ajuste, rival := map[string]float64{}, map[string]string{}
+	for i, a := range enGuerra {
+		for _, b := range enGuerra[i+1:] {
+			ea, oka := gr[a]
+			eb, okb := gr[b]
+			if !oka || !okb {
+				continue
+			}
+			d := math.Abs(ea.Lon - eb.Lon)
+			if d > 180 {
+				d = 360 - d
+			}
+			if d >= 1 {
+				continue
+			}
+			gana, pierde := a, b
+			if previo[b] > previo[a] {
+				gana, pierde = b, a
+			}
+			// diferencia de fuerza repartida según los diámetros aparentes
+			dif := math.Abs(previo[gana]-previo[pierde]) /
+				math.Abs(diametro[gana]-diametro[pierde]+0.001)
+			if dif > 60 {
+				dif = 60 // la tradición no da un tope; se pone uno para no disparar
+			}
+			ajuste[gana] += dif
+			ajuste[pierde] -= dif
+			rival[gana], rival[pierde] = pierde, gana
+		}
+	}
+	return ajuste, rival
+}
+
+// ── Bhāva bala: la fuerza de las casas, no de los grahas ──
+//
+// Es un cálculo aparte del ṣaḍbala y contesta otra pregunta: no cuánto puede un
+// graha, sino cuánto puede un asunto. Tiene tres partes.
+//
+//   Bhāvādhipati — la fuerza del señor de la casa. Es la mayor con diferencia,
+//                  y por eso el ṣaḍbala tiene que estar hecho antes.
+//   Bhāva dig    — la casa rinde según qué clase de graha la ocupa: las de
+//                  bienes quieren benéficos, las de esfuerzo quieren maléficos.
+//   Bhāva dṛṣṭi  — quién la mira, con signo.
+
+type BalaBhava struct {
+	Numero   int     `json:"numero"`
+	Senor    float64 `json:"senor"`  // ṣaḍbala de su señor, en virūpas
+	Dig      float64 `json:"dig"`
+	Drishti  float64 `json:"drishti"`
+	Total    float64 `json:"total"`
+	Rupas    float64 `json:"rupas"`
+	Rango    int     `json:"rango"`
+}
+
+// Qué clase de graha le conviene a cada bhāva. La 1, 4, 7 y 10 son de bienes y
+// prefieren benéficos; la 3, 6 y 11 son de esfuerzo y prefieren maléficos.
+var quiereBenefico = [12]bool{true, true, false, true, true, false,
+	true, true, true, true, false, true}
+
+func calcBhavaBala(bhavas []Bhava, balaDe map[string]float64, rasiDe map[string]int) []BalaBhava {
+	var out []BalaBhava
+	for _, b := range bhavas {
+		if b.Numero < 1 || b.Numero > 12 {
+			continue
+		}
+		bb := BalaBhava{Numero: b.Numero, Senor: balaDe[b.Senor]}
+
+		// dig: suma quien encaja con lo que la casa pide, resta quien no
+		for _, g := range b.Ocupan {
+			s := benefico(g)
+			if s == 0 {
+				continue
+			}
+			if (s == 1) == quiereBenefico[b.Numero-1] {
+				bb.Dig += 30
+			} else {
+				bb.Dig -= 30
+			}
+		}
+		// dṛṣṭi: la mirada de un benéfico suma, la de un maléfico resta
+		for _, g := range b.Aspectan {
+			switch benefico(g) {
+			case 1:
+				bb.Drishti += 15
+			case -1:
+				bb.Drishti -= 15
+			default:
+				bb.Drishti += 7.5
+			}
+		}
+		bb.Total = bb.Senor + bb.Dig + bb.Drishti
+		bb.Rupas = bb.Total / virupasPorRupa
+		out = append(out, bb)
+	}
+	for i := range out {
+		r := 1
+		for j := range out {
+			if out[j].Total > out[i].Total {
+				r++
+			}
+		}
+		out[i].Rango = r
+	}
+	return out
 }

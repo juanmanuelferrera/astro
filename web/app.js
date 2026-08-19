@@ -242,7 +242,7 @@ function pintarFuerza(c){const x=t(),a=c.ashtaka,s=c.shadbala;if(!a)return;
   if(s&&s.balas){h+=`<div class="caja"><h3>${x.sb_titulo}</h3><p style="color:var(--muted);margin:0 0 12px">${x.sb_lead}</p>
     <div style="overflow-x:auto"><table><tbody><tr>
     <td></td><td>${x.sb_graha}</td><td>${x.sb_sthana}</td><td>${x.sb_dig}</td><td>${x.sb_kala}</td>
-    <td>${x.sb_chesta}</td><td>${x.sb_nais}</td><td>${x.sb_drik}</td><td><b>${x.sb_rupas}</b></td>
+    <td>${x.sb_chesta}</td><td>${x.sb_nais}</td><td>${x.sb_drik}</td><td>${x.sb_yuddha}</td><td><b>${x.sb_rupas}</b></td>
     <td>${x.sb_min}</td><td><b>${x.sb_razon}</b></td></tr>`;
     const n1=v=>v.toFixed(0),n2=v=>v.toFixed(2);
     [...s.balas].sort((p,q)=>p.rango-q.rango).forEach(b=>{
@@ -250,10 +250,23 @@ function pintarFuerza(c){const x=t(),a=c.ashtaka,s=c.shadbala;if(!a)return;
       h+=`<tr><td style="color:var(--muted)">${b.rango}</td><td><b>${cue(b.graha)}</b></td>
         <td>${n1(b.sthana)}</td><td>${n1(b.dig)}</td><td>${n1(b.kala)}</td><td>${n1(b.chesta)}</td>
         <td>${n1(b.naisargika)}</td><td>${n1(b.drik)}</td>
+        <td${b.rival?` title="${x.sb_rival} ${cue(b.rival)}"`:""}>${b.rival?(b.yuddha>0?"+":"")+n1(b.yuddha)+" ⚔":"—"}</td>
         <td style="font-variant-numeric:tabular-nums"><b>${n2(b.rupas)}</b></td>
         <td style="color:var(--muted)">${b.minimo.toFixed(1)}</td>
         <td style="font-variant-numeric:tabular-nums;color:${corto?"var(--muted)":"var(--acento)"}"><b>${n2(b.razon)}</b>${corto?" ↓":""}</td></tr>`;});
     h+=`</tbody></table></div><div class="aviso">${s.nota}</div></div>`;}
+  // bhāva bala: la fuerza del asunto, no la del planeta
+  if(s&&s.bhavas&&s.bhavas.length){const mx=Math.max(...s.bhavas.map(b=>b.total));
+    h+=`<div class="caja"><h3>${x.bb_titulo}</h3><p style="color:var(--muted);margin:0 0 12px">${x.bb_lead}</p>
+      <div style="overflow-x:auto"><table><tbody><tr><td></td><td>${x.bb_bhava}</td><td>${x.bb_senor}</td>
+      <td>${x.bb_dig}</td><td>${x.bb_drishti}</td><td><b>${x.sb_rupas}</b></td><td></td></tr>`;
+    [...s.bhavas].sort((p,q)=>p.rango-q.rango).forEach(b=>{
+      h+=`<tr><td style="color:var(--muted)">${b.rango}</td><td><b>${b.numero}</b> ${RASIS[(c.lagnaRasi+b.numero-1)%12]}</td>
+        <td>${b.senor.toFixed(0)}</td><td>${b.dig>0?"+":""}${b.dig.toFixed(0)}</td>
+        <td>${b.drishti>0?"+":""}${b.drishti.toFixed(1)}</td>
+        <td style="font-variant-numeric:tabular-nums"><b>${b.rupas.toFixed(2)}</b></td>
+        <td style="width:38%"><div style="height:8px;width:${Math.max(2,b.total/mx*100)}%;background:var(--acento);border-radius:2px"></div></td></tr>`;});
+    h+=`</tbody></table></div></div>`;}
   $("#fz").innerHTML=h;}
 
 function pintarVargas(c){const x=t(); const d=k=>x["v_"+k]||"";
