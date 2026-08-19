@@ -38,6 +38,9 @@ jobs:
       - name: sintaxis del JavaScript
         run: for f in web/*.js; do node --check "$f"; done
 
+      - name: estructura de la página
+        run: node pruebas/estructura.mjs
+
       - name: castellano escrito a mano
         run: node pruebas/castellano.mjs
 

@@ -218,7 +218,7 @@ async function leer(){const url=(TRAD==="jyotisha"?"/api/lecturaved?":"/api/lect
 // ═══ pañcāṅga, arudhas y lagnas especiales ═══
 function pintarPancanga(c){const x=t(),p=c.pancanga;if(!p)return;
   const barra=(pct,txt)=>`<div style="margin:0 0 10px"><div style="display:flex;justify-content:space-between;font-size:.78rem"><span>${txt}</span><span style="color:var(--muted)">${pct.toFixed(0)}% ${x.pc_recorrido}</span></div>
-    <div style="height:4px;background:var(--linea);border-radius:2px;margin-top:3px"><div style="height:4px;width:${pct}%;background:var(--acento);border-radius:2px"></div></div></div>`;
+    <div style="height:4px;background:var(--rule);border-radius:2px;margin-top:3px"><div style="height:4px;width:${pct}%;background:var(--ac);border-radius:2px"></div></div></div>`;
   let h=`<div class="caja"><h3>${x.nav.pancanga}</h3><p style="color:var(--muted);margin:0 0 12px">${x.pc_lead}</p>
     <table><tbody>
     <tr><td><b>${x.pc_tithi}</b></td><td>${p.tithi}</td><td>${p.paksha} ${x.pc_paksha} · ${p.tithiNum}/30</td></tr>
@@ -256,7 +256,7 @@ function pintarFuerza(c){const x=t(),a=c.ashtaka,s=c.shadbala;if(!a)return;
   let h=`<div class="caja"><h3>${x.av_titulo} · ${x.av_sav}</h3>
     <p style="color:var(--muted);margin:0 0 12px">${x.av_lead}<br>${x.av_savLead}</p><table><tbody>`;
   a.sav.forEach((n,i)=>{const bh=((i-c.lagnaRasi)%12+12)%12+1;
-    const col=n>=30?"var(--acento)":n<25?"var(--muted)":"var(--texto)";
+    const col=n>=30?"var(--ac)":n<25?"var(--muted)":"var(--ink)";
     h+=`<tr><td style="width:2.2em;color:var(--muted)">${bh}</td><td style="width:6em">${RASIS[i]}</td>
       <td style="width:2.4em;text-align:right;font-variant-numeric:tabular-nums;color:${col}"><b>${n}</b></td>
       <td><div style="height:8px;width:${n/max*100}%;background:${col};border-radius:2px;min-width:2px"></div></td></tr>`;});
@@ -267,7 +267,7 @@ function pintarFuerza(c){const x=t(),a=c.ashtaka,s=c.shadbala;if(!a)return;
   RASIS.forEach(r=>h+=`<td style="font-size:.7rem;color:var(--muted)">${r.slice(0,4)}</td>`);
   h+=`</tr>`;
   Object.keys(a.bav).forEach(g=>{h+=`<tr><td><b>${cue(g)}</b></td>`;
-    a.bav[g].forEach(n=>h+=`<td style="text-align:center;font-variant-numeric:tabular-nums;color:${n>=5?"var(--acento)":n<=2?"var(--muted)":"inherit"}">${n}</td>`);
+    a.bav[g].forEach(n=>h+=`<td style="text-align:center;font-variant-numeric:tabular-nums;color:${n>=5?"var(--ac)":n<=2?"var(--muted)":"inherit"}">${n}</td>`);
     h+=`</tr>`;});
   h+=`</tbody></table></div></div>`;
   // ṣaḍbala
@@ -285,7 +285,7 @@ function pintarFuerza(c){const x=t(),a=c.ashtaka,s=c.shadbala;if(!a)return;
         <td${b.rival?` title="${x.sb_rival} ${cue(b.rival)}"`:""}>${b.rival?(b.yuddha>0?"+":"")+n1(b.yuddha)+" ⚔":"—"}</td>
         <td style="font-variant-numeric:tabular-nums"><b>${n2(b.rupas)}</b></td>
         <td style="color:var(--muted)">${b.minimo.toFixed(1)}</td>
-        <td style="font-variant-numeric:tabular-nums;color:${corto?"var(--muted)":"var(--acento)"}"><b>${n2(b.razon)}</b>${corto?" ↓":""}</td></tr>`;});
+        <td style="font-variant-numeric:tabular-nums;color:${corto?"var(--muted)":"var(--ac)"}"><b>${n2(b.razon)}</b>${corto?" ↓":""}</td></tr>`;});
     h+=`</tbody></table></div><div class="aviso">${s.nota}</div></div>`;}
   // bhāva bala: la fuerza del asunto, no la del planeta
   if(s&&s.bhavas&&s.bhavas.length){const mx=Math.max(...s.bhavas.map(b=>b.total));
@@ -297,7 +297,7 @@ function pintarFuerza(c){const x=t(),a=c.ashtaka,s=c.shadbala;if(!a)return;
         <td>${b.senor.toFixed(0)}</td><td>${b.dig>0?"+":""}${b.dig.toFixed(0)}</td>
         <td>${b.drishti>0?"+":""}${b.drishti.toFixed(1)}</td>
         <td style="font-variant-numeric:tabular-nums"><b>${b.rupas.toFixed(2)}</b></td>
-        <td style="width:38%"><div style="height:8px;width:${Math.max(2,b.total/mx*100)}%;background:var(--acento);border-radius:2px"></div></td></tr>`;});
+        <td style="width:38%"><div style="height:8px;width:${Math.max(2,b.total/mx*100)}%;background:var(--ac);border-radius:2px"></div></td></tr>`;});
     h+=`</tbody></table></div></div>`;}
   $("#fz").innerHTML=h;}
 

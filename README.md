@@ -299,6 +299,22 @@ los siglos siempre, y para el año 837 eran cuatro días de desfase—, y la
 referencia de orto la estaba pidiendo con otro criterio de altura, así que los
 números no eran comparables.
 
+## Un fallo que no cazaba nada
+
+Escribí `var(--acento)`, `var(--linea)` y `var(--texto)`. No existen: las
+variables de este tema se llaman `--ac`, `--rule` e `--ink`.
+
+Una variable CSS sin definir **no da error**. La declaración se vuelve inválida
+y la propiedad cae a su valor inicial, que para un `background` es
+transparente. Así que las barras del pañcāṅga, las del sarvāṣṭakavarga y las
+del bhāva bala se dibujaban con su ancho correcto y **no se veían**. Compilaba,
+arrancaba, respondía, y las pruebas pasaban todas: ninguna mira colores.
+
+De ahí sale `pruebas/estructura.mjs`, que revisa las costuras de la página: lo
+que el JavaScript pide contra lo que el HTML tiene, identificadores repetidos,
+pestañas sin sección y secciones sin pestaña, variables de color usadas contra
+definidas, y el equilibrio de las etiquetas.
+
 ## Integración continua
 
 `.github/workflows/comprobar.yml` ejecuta en cada push lo mismo que
