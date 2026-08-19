@@ -26,11 +26,22 @@ import (
 //go:embed web
 var contenido embed.FS
 
+// Version es el único sitio donde se escribe. De aquí sale el pie de la
+// página, la respuesta de /api/version y la opción -version; empaquetar/todo.sh
+// comprueba que coincide con la etiqueta que se va a publicar, para que no se
+// publique una versión que dentro dice otra cosa.
+const Version = "1.8.0"
+
 func main() {
 	puerto := flag.Int("puerto", 8733, "puerto del servidor")
 	abrir := flag.Bool("abrir", true, "abrir el navegador al arrancar")
 	red := flag.Bool("red", false, "aceptar conexiones de otros equipos de la red local")
+	verVersion := flag.Bool("version", false, "decir la versión y salir")
 	flag.Parse()
+	if *verVersion {
+		fmt.Println("astro " + Version)
+		return
+	}
 
 	sub, _ := fs.Sub(contenido, "web")
 	http.Handle("/", http.FileServer(http.FS(sub)))
@@ -43,6 +54,9 @@ func main() {
 	http.HandleFunc("/api/verificar", apiVerificar)
 	http.HandleFunc("/api/verificarved", apiVerificarVed)
 	http.HandleFunc("/api/prasna", apiPrasna)          // la carta de la pregunta
+	http.HandleFunc("/api/version", func(w http.ResponseWriter, r *http.Request) {
+		jsonOut(w, map[string]string{"version": Version})
+	})
 	http.HandleFunc("/api/lugares", apiLugares)
 	http.HandleFunc("/api/huso", apiHuso)
 	http.HandleFunc("/api/husohistoria", apiHistoria)

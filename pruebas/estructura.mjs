@@ -57,6 +57,48 @@ inventadas.forEach(v => mal(`se usa var(${v}) y no está definida`,
   "la declaración se vuelve inválida y la propiedad cae a su valor inicial: un fondo así queda transparente"));
 if (!inventadas.length) bien(`las ${usadas.size} variables de color usadas están definidas`);
 
+// ── el atributo hidden funciona de verdad ──
+//
+// hidden esconde porque la hoja del navegador trae [hidden]{display:none}. Esa
+// regla tiene la misma especificidad que una clase, y el origen del autor gana
+// al del navegador: basta con que la clase del elemento fije un display para
+// que hidden deje de hacer nada, sin avisar. Le pasó a #estilosBox, que llevaba
+// .estilos{display:flex} y enseñaba los estilos de carta védica en occidental.
+//
+// La cura es declarar [hidden] en la propia página con !important. Mientras
+// esté, esto no puede repetirse con ningún elemento.
+const declaraHidden = /\[hidden\][^{]*\{[^}]*display\s*:\s*none\s*!important/.test(html);
+if (declaraHidden) {
+  bien("la página declara [hidden]{display:none!important}: el atributo no lo puede tapar una clase");
+} else {
+  const conDisplay = {};
+  for (const m of html.matchAll(/\.([\w-]+)\s*\{([^}]*)\}/g))
+    if (/(^|;)\s*display\s*:/.test(m[2]))
+      conDisplay[m[1]] = /display\s*:\s*([\w-]+)/.exec(m[2])[1];
+  let choques = 0;
+  for (const m of html.matchAll(/<\w+([^>]*\bhidden\b[^>]*)>/g)) {
+    const attrs = m[1];
+    if (attrs.includes('type="hidden"')) continue;
+    const id = (/id="([^"]+)"/.exec(attrs) || [, "(sin id)"])[1];
+    for (const c of ((/class="([^"]+)"/.exec(attrs) || [, ""])[1]).split(/\s+/).filter(Boolean))
+      if (conDisplay[c]) {
+        mal(`el atributo hidden de #${id} no hace nada`,
+          `la clase .${c} pone display:${conDisplay[c]}, y el estilo del autor gana a [hidden] del navegador`);
+        choques++;
+      }
+  }
+  if (!choques) mal("la página no declara [hidden]{display:none!important}",
+    "hoy no choca con ninguna clase, pero cualquier clase con display que se añada mañana romperá un hidden en silencio");
+}
+
+// ── la versión se escribe en un solo sitio ──
+const go = fs.readFileSync("main.go", "utf8");
+const ver = /const Version = "([^"]+)"/.exec(go);
+if (!ver) mal("main.go no declara Version", "sin ella el pie no puede decir qué se está ejecutando");
+else if (!/^\d+\.\d+\.\d+$/.test(ver[1]))
+  mal(`la versión "${ver[1]}" no tiene la forma X.Y.Z`, "las etiquetas de publicación la usan tal cual");
+else bien(`versión ${ver[1]}, declarada una sola vez en main.go`);
+
 // ── las etiquetas cierran ──
 const cuerpo = html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
 const vacias = new Set(["br","hr","img","input","meta","link","source","path","circle","line","rect","use","col"]);

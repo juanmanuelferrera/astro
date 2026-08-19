@@ -10,6 +10,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 DEST="${1:-dist}"
 mkdir -p "$DEST"
 
+VERSION=$(go run . -version | awk '{print $2}')
+echo "═══ astro $VERSION ═══"
+echo
 echo "═══ comprobaciones ═══"
 ./verificar.sh >/dev/null || { echo "verificar.sh falla — no se publica nada"; exit 1; }
 echo "  todo en orden"
@@ -32,5 +35,7 @@ for par in linux/amd64 linux/arm64 windows/amd64; do
 done
 
 echo
-echo "═══ listo ═══"
+echo "═══ listo — astro $VERSION ═══"
+echo "  para publicar:  gh release create v$VERSION dist/astro-mac dist/Astro-mac-app.zip \\"
+echo "                    dist/astro-linux.zip dist/astro-linux-* dist/astro-windows-amd64.exe"
 ls -la "$DEST" | awk 'NR>1 && $5>10000 {printf "  %-26s %6.1f MB\n", $9, $5/1048576}'

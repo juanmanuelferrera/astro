@@ -1,6 +1,8 @@
 const $ = s => document.querySelector(s);
 let TRAD = "occidental", LANG = "es", ESTILO = "norte", DATOS = null;
 let SECCION = "carta";   // la pestaña abierta; sobrevive a los cambios de idioma
+let VERSION = "";        // la dice el binario, no se escribe aquí
+fetch("/api/version").then(r=>r.json()).then(v=>{VERSION=v.version;aplicarIdioma();}).catch(()=>{});
 const t = () => T[LANG];
 
 const SIGW = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
@@ -80,7 +82,10 @@ function aplicarIdioma() {
   for (const id in et) { const l=$("#"+id), inp=l.querySelector("input,div");
     l.childNodes[0].nodeValue = x[et[id]]; }
   $("#bLevantar").textContent = x.levantar; $("#guardar").textContent = x.guardar;
-  $("#porque").textContent = x.porque; $("#pie").textContent = x.pie;
+  $("#porque").textContent = x.porque;
+  // La versión va pegada al pie, y sale del binario: si el pie dijera una cosa
+  // y el binario otra, no habría manera de saber qué se está ejecutando.
+  $("#pie").textContent = x.pie + (VERSION ? ` · ${x.version} ${VERSION}` : "");
   $("#btOcc").textContent = x.trad_occidental; $("#btJyo").textContent = x.trad_jyotisha;
   $("#btNorte").textContent = x.norte; $("#btSur").textContent = x.sur;
   $("#nodoTxt").textContent = x.nodo + ": " + x.nodo_verdadero;

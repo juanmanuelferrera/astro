@@ -299,7 +299,21 @@ los siglos siempre, y para el año 837 eran cuatro días de desfase—, y la
 referencia de orto la estaba pidiendo con otro criterio de altura, así que los
 números no eran comparables.
 
-## Un fallo que no cazaba nada
+## Dos fallos que no cazaba nada
+
+### El `hidden` que no escondía
+
+Los botones de estilo de carta védica —Norte y Sur de la India— salían también
+en occidental. El JavaScript los escondía con `hidden`, y `hidden` no hacía
+nada.
+
+`hidden` esconde porque el navegador trae `[hidden]{display:none}`. Esa regla
+tiene la especificidad de una clase, y **el estilo del autor gana al del
+navegador**: la clase `.estilos{display:flex}` la anulaba, sin error y sin
+aviso. Ahora la página declara `[hidden]{display:none!important}`, así que no le
+puede volver a pasar a ningún elemento.
+
+### Las variables de color inventadas
 
 Escribí `var(--acento)`, `var(--linea)` y `var(--texto)`. No existen: las
 variables de este tema se llaman `--ac`, `--rule` e `--ink`.
@@ -314,6 +328,16 @@ De ahí sale `pruebas/estructura.mjs`, que revisa las costuras de la página: lo
 que el JavaScript pide contra lo que el HTML tiene, identificadores repetidos,
 pestañas sin sección y secciones sin pestaña, variables de color usadas contra
 definidas, y el equilibrio de las etiquetas.
+
+## La versión
+
+Se escribe en un solo sitio, `main.go`. De ahí salen el pie de la página,
+`/api/version` y la opción `-version` del binario. Si el pie dijera una cosa y
+el binario otra, no habría manera de saber qué se está ejecutando.
+
+```
+./astro -version        →  astro 1.8.0
+```
 
 ## Integración continua
 

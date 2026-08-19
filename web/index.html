@@ -78,6 +78,12 @@ svg{max-width:100%;height:auto;color:var(--ink)}
 margin-bottom:13px;overflow-x:auto}
 .caja h3{margin:0 0 8px;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;
 color:var(--muted);font-weight:600}
+/* El atributo hidden esconde porque el navegador trae [hidden]{display:none}.
+   Esa regla tiene la especificidad de una clase, y el estilo del autor gana al
+   del navegador: cualquier clase que fije un display lo anula sin avisar. Le
+   pasó a .estilos, que enseñaba los estilos de carta védica en occidental.
+   Declarándolo aquí con !important no le puede volver a pasar a nadie. */
+[hidden]{display:none!important}
 .estilos{display:flex;gap:5px;margin-bottom:9px}
 .estilos button{background:none;border:1px solid var(--rule);border-radius:3px;color:var(--muted);
 font:inherit;font-size:.73rem;padding:3px 10px;cursor:pointer;font-family:ui-monospace,Menlo,monospace}
