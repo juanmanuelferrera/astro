@@ -232,6 +232,52 @@ Gatekeeper —la aplicación no está firmada, así que al bajarla el sistema se
 niega a abrirla— con el `xattr -dr` y la alternativa sin terminal. El de Linux
 trae un lanzador que elige amd64 o arm64 mirando `uname`.
 
+## Dónde se guardan las cartas
+
+En el directorio de configuración del sistema, dentro de `astro/`. Con la
+variable `ASTRO_DIR` se manda a otro sitio — sirve para llevar el programa en
+un pendrive con sus cartas dentro, y para que los tests no escriban en las del
+usuario.
+
+## Los tests
+
+```
+go test ./...
+```
+
+Lo que mide la astronomía no es el motor contra sí mismo —eso solo detecta
+cambios, no errores— sino contra **Swiss Ephemeris**, que es la referencia con
+la que se compara todo el mundo. Los valores están clavados en
+`internal/efem/referencia_test.go`, generados por
+`pruebas/generar_referencia.py`. Si un test falla, el que está mal es el motor.
+
+Sobre 690 posiciones repartidas entre 1800 y 2100:
+
+| | dentro de 1800-2050 | fuera, hasta 2100 |
+|---|---|---|
+| Sol | 0,37′ | 0,28′ |
+| Luna | 0,74′ | 0,88′ |
+| Saturno | 11,0′ | 18,6′ |
+| resto de planetas | < 7,1′ | < 3,8′ |
+
+Saturno es el peor porque la gran desigualdad con Júpiter no cabe en unos
+elementos keplerianos. La tabla de Standish que usa el motor está dada para
+1800-2050, y fuera se degrada; por eso el test mide las dos ventanas por
+separado y no afloja el margen de la buena para tapar la mala.
+
+Y por encima de todo eso, lo que de verdad importa en astrología:
+**ninguna de las 690 posiciones cambia de signo.** Diez minutos de arco no
+mueven a nadie de casa; salir en otro signo, sí.
+
+Casas de Plácido contra Swiss Ephemeris: Ascendente 2,9″, Medio Cielo 2,2″,
+cúspides 3,7″. Ayanāṁśa Lahiri: 0,0002″. Salida y puesta del Sol: 35 segundos.
+
+Escribiendo estos tests aparecieron dos cosas: el día juliano estaba mal para
+fechas anteriores al 15 de octubre de 1582 —se aplicaba la regla gregoriana de
+los siglos siempre, y para el año 837 eran cuatro días de desfase—, y la
+referencia de orto la estaba pidiendo con otro criterio de altura, así que los
+números no eran comparables.
+
 ## Comprobar antes de publicar
 
 ```

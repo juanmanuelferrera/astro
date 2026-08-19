@@ -35,13 +35,26 @@ var (
 func Ruta() string { return ruta }
 
 func init() {
-	base, err := os.UserConfigDir()
-	if err != nil {
-		base, _ = os.UserHomeDir()
+	cargar()
+}
+
+// cargar decide dónde viven las cartas y lee lo que ya hubiera.
+//
+// ASTRO_DIR permite mandarlas a otro sitio: sirve para llevar el programa en un
+// pendrive con sus cartas dentro, y sobre todo para que los tests no escriban
+// en las del usuario.
+func cargar() {
+	dir := os.Getenv("ASTRO_DIR")
+	if dir == "" {
+		base, err := os.UserConfigDir()
+		if err != nil {
+			base, _ = os.UserHomeDir()
+		}
+		dir = filepath.Join(base, "astro")
 	}
-	dir := filepath.Join(base, "astro")
 	os.MkdirAll(dir, 0o755)
 	ruta = filepath.Join(dir, "cartas.json")
+	todas = nil
 	if b, err := os.ReadFile(ruta); err == nil {
 		json.Unmarshal(b, &todas)
 	}

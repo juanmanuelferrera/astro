@@ -25,9 +25,19 @@ func DiaJuliano(anio, mes int, dia, horaUT float64) float64 {
 		y--
 		m += 12
 	}
-	a := math.Floor(float64(y) / 100)
-	b := 2 - a + math.Floor(a/4) // calendario gregoriano
 	d := dia + horaUT/24
+
+	// La corrección gregoriana solo se aplica a partir del 15 de octubre de
+	// 1582; antes de esa fecha las cuentas van por el calendario juliano, que
+	// no tiene la regla de los siglos. Sin esto, cualquier fecha anterior sale
+	// desplazada — para el año 837 son cuatro días enteros.
+	gregoriano := anio > 1582 ||
+		(anio == 1582 && (mes > 10 || (mes == 10 && d >= 15)))
+	b := 0.0
+	if gregoriano {
+		a := math.Floor(float64(y) / 100)
+		b = 2 - a + math.Floor(a/4)
+	}
 	return math.Floor(365.25*float64(y+4716)) +
 		math.Floor(30.6001*float64(m+1)) + d + b - 1524.5
 }
