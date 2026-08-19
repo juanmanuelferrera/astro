@@ -48,7 +48,10 @@ globalThis.localStorage = { getItem: () => null, setItem(){}, removeItem(){} };
 globalThis.alert = () => {};
 // El código pide rutas relativas; aquí hay que anteponerle el servidor.
 const fetchReal = globalThis.fetch;
-globalThis.fetch = (u, o) => fetchReal(String(u).startsWith("/") ? base + u : u, o);
+globalThis.fetch = (u, o) => {
+  const s = String(u);
+  return fetchReal(/^https?:/.test(s) ? s : base + (s.startsWith("/") ? s : "/" + s), o);
+};
 globalThis.prompt = () => null;
 globalThis.confirm = () => true;
 
@@ -66,7 +69,8 @@ const exportar = `
   pintarPancanga, pintarFuerza, pintarVargas, pintarDasas,
   set TRAD(v){ TRAD = v }, get TRAD(){ return TRAD },
   set LANG(v){ LANG = v }, get LANG(){ return LANG },
-  set DATOS(v){ DATOS = v }, get DATOS(){ return DATOS } };
+  set DATOS(v){ DATOS = v }, get DATOS(){ return DATOS },
+  repintarTodo, comparar, pintarEjercicio, abrirModulo, leer };
 `;
 try { (0, eval)(src + exportar); ok("app.js se ejecuta entero"); }
 catch (e) { console.log("  ✗ app.js revienta al cargar");
@@ -153,6 +157,55 @@ const coladas = soloEs.filter(([, v]) => paja.includes(v));
 if (coladas.length) coladas.forEach(([k, v]) =>
   mal(`en inglés se cuela el texto español de "${k}"`, v.slice(0, 60)));
 else ok(`ningún texto español en la página en inglés (${soloEs.length} comprobados)`);
+
+// ── el switch de idioma tiene que arrastrarlo todo ────────────────────────
+//
+// Esta es la prueba de verdad. Se monta la página entera en español —incluidas
+// las pestañas que solo se pintan al abrirlas: comparar, el ejercicio, un
+// módulo del curso abierto y el huso resuelto— y luego se toca el switch. Si
+// después queda una sola frase en español, es que algo no se repinta.
+{
+  const A3 = globalThis.__api;
+  for (const id of huecos.concat(["texto", "hist", "guardadas", "lista"])) {
+    const n = doc.querySelector("#" + id); n.innerHTML = ""; n.textContent = "";
+  }
+  A3.LANG = "es"; A3.TRAD = "jyotisha"; A3.DATOS = datos.es.jyotisha;
+  doc.querySelector("#zona").value = "Europe/Madrid";
+  doc.querySelector("#fecha").value = "1961-12-19";
+  doc.querySelector("#hora").value = "16:30";
+  doc.querySelector("#lat").value = "41.58";
+  doc.querySelector("#lon").value = "2.55";
+  doc.querySelector("#tz").value = "1";
+  doc.querySelector("#hist").hidden = false;
+
+  A3.aplicarIdioma(); A3.render();
+  await A3.comparar();
+  A3.pintarEjercicio();
+  await A3.abrirModulo("01-el-cielo");
+  await A3.leer();
+
+  const antes = huecos.concat(["texto", "hist", "cmp", "ejBox"])
+    .map(id => doc.querySelector("#" + id).innerHTML || "").join(" ");
+  const habiaEs = soloEs.filter(([, v]) => antes.includes(v)).length;
+  if (habiaEs < 5) mal("la página en español no se llegó a montar", `solo ${habiaEs} textos`);
+  else ok(`página montada en español (${habiaEs} textos localizados)`);
+
+  // …y ahora se toca el switch, que es lo único que hace el usuario.
+  A3.LANG = "en";
+  await A3.repintarTodo();
+
+  const despues = huecos.concat(["texto", "hist", "cmp", "ejBox"])
+    .map(id => { const n = doc.querySelector("#" + id);
+                 return (n.innerHTML || "") + " " + (n.textContent || ""); }).join(" ");
+  const quedan = soloEs.filter(([, v]) => despues.includes(v));
+  if (quedan.length) {
+    const dónde = id => (doc.querySelector("#" + id).innerHTML || "");
+    quedan.slice(0, 6).forEach(([k, v]) => {
+      const sitio = huecos.concat(["texto","hist","cmp","ejBox"]).find(id => dónde(id).includes(v)) || "?";
+      mal(`tras el switch queda español en #${sitio}`, `${k}: ${v.slice(0, 50)}`);
+    });
+  } else ok("tras tocar el switch no queda una sola frase en español");
+}
 
 console.log(fallos ? `\n${fallos} fallo(s)` : "\ninterfaz correcta.");
 process.exit(fallos ? 1 : 0);

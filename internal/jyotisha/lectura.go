@@ -83,6 +83,11 @@ var es = tabla{
 		"antar":   " Dentro de ella corre la antardaśā de %s hasta %s, que estrecha el asunto.",
 		"atma":    "El ātmakāraka es %s: el hilo del alma va por %s. Mira dónde cae en el D-9 antes que ninguna otra cosa.",
 		"amatya":  "El amātyakāraka es %s: la carrera y el sustento se explican por ahí.",
+		"f_senor": "señor de %d en %d",
+		"f_senorEn": "señor de %d (%s) en %d",
+		"f_drishti": "dṛṣṭi sobre %d",
+		"f_dasa": "vimśottarī %s",
+		"f_pos": "%s %s, bhāva %d",
 		"contra":  "El bhāva %d (%s) está disputado: lo ocupan o lo miran %s por un lado y %s por otro. No elijas un lado. Las dos cosas están ahí y hay que describirlas juntas, con «y», no con «pero».",
 		"dom":     "%s. El señor del lagna es %s, en el bhāva %d.",
 		"nota":    "Esto es traducción literal, no una lectura. Agrupar por temas ya está hecho; resolver lo que se contradice y escribirlo seguido lo haces tú. Y cuando algo salga borroso, no le pongas adjetivos: haz más cálculos. Ahí está el curso, módulo 16.",
@@ -146,6 +151,11 @@ var en = tabla{
 		"antar":   " Within it the antardaśā of %s runs until %s, which narrows the matter.",
 		"atma":    "The ātmakāraka is %s: the soul's thread runs through %s. Look at where it falls in the D-9 before anything else.",
 		"amatya":  "The amātyakāraka is %s: career and livelihood are explained from there.",
+		"f_senor": "lord of %d in %d",
+		"f_senorEn": "lord of %d (%s) in %d",
+		"f_drishti": "dṛṣṭi on %d",
+		"f_dasa": "vimśottarī %s",
+		"f_pos": "%s %s, bhāva %d",
 		"contra":  "Bhāva %d (%s) is contested: %s occupy or look at it on one side, %s on the other. Do not pick a side. Both are there, and they have to be described together, with \"and\", not with \"but\".",
 		"dom":     "%s. The lord of the lagna is %s, in bhāva %d.",
 		"nota":    "This is a literal translation, not a reading. Grouping by theme is already done; resolving what contradicts and writing it as running prose is your job. And when something comes out blurred, do not add adjectives to it: do more calculation. That is module 16 of the course.",
@@ -244,7 +254,7 @@ func Interpretar(c Carta, lang string) LecturaVed {
 		if g.DigBala {
 			t += f["dig"]
 		}
-		add(T.cat[g.Bhava-1], t, fmt.Sprintf("%s %s, bhāva %d", nom(g.Nombre), g.Posicion, g.Bhava), 1)
+		add(T.cat[g.Bhava-1], t, fmt.Sprintf(f["f_pos"], nom(g.Nombre), g.Posicion, g.Bhava), 1)
 	}
 
 	// 2. La cadena de señores. Es el corazón del método: dice de qué depende
@@ -259,7 +269,7 @@ func Interpretar(c Carta, lang string) LecturaVed {
 		}
 		if b.SenorEn == b.Numero {
 			add(T.cat[b.Numero-1], fmt.Sprintf(f["propia"], b.Numero, nom(b.Senor)),
-				fmt.Sprintf("señor de %d en %d", b.Numero, b.SenorEn), 1.3)
+				fmt.Sprintf(f["f_senor"], b.Numero, b.SenorEn), 1.3)
 			continue
 		}
 		t := fmt.Sprintf(f["cadena"], T.bhava[b.Numero-1], T.bhava[b.SenorEn-1],
@@ -270,7 +280,7 @@ func Interpretar(c Carta, lang string) LecturaVed {
 			t += " " + fmt.Sprintf(f["cadena2"], nom(seg.Senor), seg.Numero, seg.SenorEn,
 				T.bhava[b.Numero-1], T.bhava[seg.SenorEn-1])
 		}
-		add(T.cat[b.Numero-1], t, fmt.Sprintf("señor de %d (%s) en %d", b.Numero, b.Senor, b.SenorEn), 1.4)
+		add(T.cat[b.Numero-1], t, fmt.Sprintf(f["f_senorEn"], b.Numero, nom(b.Senor), b.SenorEn), 1.4)
 	}
 
 	// 3. Dṛṣṭi: quién mira cada bhāva. En jyotiṣa el aspecto es por signo entero.
@@ -296,7 +306,7 @@ func Interpretar(c Carta, lang string) LecturaVed {
 		}
 		add(T.cat[b.Numero-1], fmt.Sprintf(f["mira"], b.Numero, T.bhava[b.Numero-1],
 			nombres(b.Aspectan), q),
-			fmt.Sprintf("dṛṣṭi sobre %d", b.Numero), 1.1)
+			fmt.Sprintf(f["f_drishti"], b.Numero), 1.1)
 
 		// 4. Contradicción: la misma casa tirada por los dos lados.
 		if pos > 0 && neg > 0 {
@@ -342,7 +352,7 @@ func Interpretar(c Carta, lang string) LecturaVed {
 				break
 			}
 		}
-		add(T.cat[en-1], t, "vimśottarī "+d.Senor, 2)
+		add(T.cat[en-1], t, fmt.Sprintf(f["f_dasa"], nom(d.Senor)), 2)
 		break
 	}
 

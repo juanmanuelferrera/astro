@@ -13,13 +13,33 @@ const gms = g => { const d=Math.floor(g), m=Math.round((g-d)*60); return m===60?
 document.querySelectorAll(".selector button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".selector button").forEach(x => x.classList.toggle("on", x===b));
   TRAD = b.dataset.t; document.documentElement.dataset.trad = TRAD;
-  pintarNav(); pintarCurso(); $("#estilosBox").hidden = TRAD !== "jyotisha";
-  aplicarIdioma(); levantar();
+  $("#estilosBox").hidden = TRAD !== "jyotisha";
+  // Al cambiar de tradición el curso es otro: se cierra el módulo abierto.
+  delete $("#texto").dataset.f; $("#texto").hidden = true; $("#texto").innerHTML = "";
+  repintarTodo();
 });
 document.querySelectorAll(".idioma button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".idioma button").forEach(x => x.classList.toggle("on", x===b));
-  LANG = b.dataset.i; document.documentElement.lang = LANG; aplicarIdioma(); levantar();
+  LANG = b.dataset.i; document.documentElement.lang = LANG;
+  repintarTodo();
 });
+
+// repintarTodo rehace TODO lo que hay en pantalla en el idioma activo, no solo
+// lo que se ve en ese momento: las pestañas ocultas conservan su contenido y
+// asomarían en el idioma anterior al abrirlas.
+//
+// Parte del texto lo compone el servidor —los yogas, la lectura, la historia
+// del huso— asi que no basta con repintar: hay que volver a pedirlo.
+async function repintarTodo(){
+  aplicarIdioma();                                   // rótulos, pestañas, índice del curso
+  await pintarGuardadas();                           // el rótulo «Guardadas»
+  if ($("#zona").value) await resolverHuso();        // «horario de verano» / «estándar»
+  if (!$("#hist").hidden) await pintarHistoria();
+  if ($("#texto").dataset.f) await abrirModulo($("#texto").dataset.f);
+  if ($("#cmp").innerHTML) await comparar();
+  if ($("#ejBox").innerHTML) pintarEjercicio();
+  if (DATOS) await levantar();                       // vuelve a pedir la carta y la lectura
+}
 document.querySelectorAll(".estilos button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".estilos button").forEach(x => x.classList.toggle("on", x===b));
   ESTILO = b.dataset.e; if (DATOS) render();
@@ -170,7 +190,7 @@ async function levantar(e){if(e)e.preventDefault();
   const [Y,M,D]=$("#fecha").value.split("-"),[H,Mi]=$("#hora").value.split(":");
   const extra=TRAD==="jyotisha"?` · ${t().lagnaT} ${DATOS.lagnaPos}`:"";
   $("#ficha").innerHTML=`<h2>${$("#ciudad").value||"—"}</h2><p>${D}/${M}/${Y} · ${H}:${Mi} · UTC${+$("#tz").value>=0?"+":""}${$("#tz").value} · ${DATOS.ut}${extra}</p>`;
-  render(); leer();}
+  render(); await leer();}
 $("#f").onsubmit=levantar;
 
 async function leer(){const url=(TRAD==="jyotisha"?"/api/lecturaved?":"/api/lectura?")+params()+"&lang="+LANG;
@@ -303,10 +323,15 @@ function pintarCurso(){const x=t();
   $("#lista").innerHTML=nota+(LANG==="en"?CURSOS_EN:CURSOS_ES)[TRAD].map(([f,ti,n])=>
     `<a href="#" data-f="${f}"><b>${n?(n==="·"?x.extra:x.modulo+" "+n):x.indice}</b>${ti}</a>`).join("");
   $("#lista").onclick=async ev=>{const a=ev.target.closest("a");if(!a)return;ev.preventDefault();
-    const sub=LANG==="en"?"en/":"";   // los módulos traducidos viven en en/
-    const md=await (await fetch(`curso/${TRAD}/${sub}${a.dataset.f}.md`)).text();
-    $("#texto").hidden=false;$("#texto").innerHTML=markdown(md);
+    await abrirModulo(a.dataset.f);
     $("#texto").scrollIntoView({behavior:"smooth",block:"start"});};}
+
+// abrirModulo deja anotado cuál está abierto, para poder recargarlo en el otro
+// idioma sin que el lector pierda el sitio.
+async function abrirModulo(f){
+  const sub=LANG==="en"?"en/":"";   // los módulos traducidos viven en en/
+  const md=await (await fetch(`curso/${TRAD}/${sub}${f}.md`)).text();
+  $("#texto").dataset.f=f;$("#texto").hidden=false;$("#texto").innerHTML=markdown(md);}
 function markdown(tx){const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
   const inl=s=>esc(s).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
   const o=[];let tb=null;
@@ -327,15 +352,20 @@ function markdown(tx){const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
 
 // ═══ ejercicio ═══
 function pintarEjercicio(){const x=t();
-  if($("#ejBox").dataset.listo)return;
-  $("#ejBox").dataset.listo="1";
+  // Se vuelve a pintar cada vez, porque si no nunca cambiaría de idioma. Lo
+  // que el alumno lleve escrito se guarda antes y se devuelve después: perder
+  // sus cuentas por tocar el switch sería una faena.
+  const campos=["jd","tsg","tsl","asc","mc"];
+  const escrito={};
+  if($("#ejBox").innerHTML) campos.forEach(k=>{const n=$("#"+k); if(n) escrito[k]=n.value;});
+  const resultado=$("#res")?$("#res").innerHTML:"";
   $("#ejBox").innerHTML=`<h2 style="font-size:1.2rem;margin:0 0 6px">${x.ejTit}</h2>
     <p class="lead">${x.ejTxt}</p><form id="fv">
-    <label>Día juliano<input id="jd" class="w"></label>
-    <label>T.S. Greenwich °<input id="tsg"></label>
-    <label>T.S. local °<input id="tsl"></label>
-    <label>Ascendente °<input id="asc"></label>
-    <label>Medio Cielo °<input id="mc"></label>
+    <label>${x.ej_jd}<input id="jd" class="w"></label>
+    <label>${x.ej_tsg}<input id="tsg"></label>
+    <label>${x.ej_tsl}<input id="tsl"></label>
+    <label>${x.ej_asc}<input id="asc"></label>
+    <label>${x.ej_mc}<input id="mc"></label>
     <button class="go" type="submit">${x.comprobar}</button></form><div id="res"></div>`;
   $("#fv").onsubmit=async e=>{e.preventDefault();
     const ex=["jd","tsg","tsl","asc","mc"].map(k=>`${k}=${$("#"+k).value||0}`).join("&");
@@ -344,7 +374,11 @@ function pintarEjercicio(){const x=t();
     if(r.primerFallo>=0){const p=r.pasos[r.primerFallo];
       h+=`<div class="aviso"><b>${p.nombre}.</b> ±${p.desvio} ${p.unidad} — ${p.comentario}. ${t().ejRehaz}</div>`;}
     else h+=`<div class="aviso" style="border-color:var(--ok)"><b>${t().ejOk}</b></div>`;
-    $("#res").innerHTML=h;};}
+    $("#res").innerHTML=h;};
+  campos.forEach(k=>{const n=$("#"+k); if(n&&escrito[k]!==undefined) n.value=escrito[k];});
+  // El resultado anterior se deja tal cual: lo compone el servidor y volver a
+  // pedirlo sin que el alumno lo pida sería recalcularle la corrección.
+  if(resultado&&$("#res")) $("#res").innerHTML=resultado;}
 
 // ═══ ciudades, husos, guardadas ═══
 async function buscarCiudad(){const q=$("#ciudad").value,c=$("#sug");
@@ -367,8 +401,11 @@ $("#sug").onclick=async ev=>{const b=ev.target.closest("button");if(!b)return;
 $("#fecha").onchange=resolverHuso;$("#hora").onchange=resolverHuso;
 // Cambiar de nodo obliga a recalcular: mueve a Rāhu y a Ketu de pada.
 $("#nodoV").onchange=()=>{if(DATOS)levantar();};
-$("#porque").onclick=async()=>{const c=$("#hist");
+$("#porque").onclick=()=>{const c=$("#hist");
   if(!c.hidden){c.hidden=true;return;}
+  pintarHistoria();};
+
+async function pintarHistoria(){const c=$("#hist");
   const [a,m,d]=$("#fecha").value.split("-"),[hh,mm]=$("#hora").value.split(":");
   const h=await (await fetch(`/api/husohistoria?zona=${encodeURIComponent($("#zona").value)}&anio=${+a}&mes=${+m}&dia=${+d}&hh=${+hh}&mm=${+mm}&lon=${$("#lon").value}`)).json();
   if(h.error){c.innerHTML=h.error;c.hidden=false;return;}
@@ -383,7 +420,7 @@ $("#porque").onclick=async()=>{const c=$("#hist");
   x+=`<div class="sec"><h4>${L.hDstAnio.replace("{a}",a)}</h4>`+
     (h.delAnio.length?h.delAnio.map(v=>`<div class="fila">${v.fecha} · UTC${sg(v.de)} → <b>UTC${sg(v.a)}</b> — ${v.motivo}</div>`).join(""):`<div class="fila">${L.hSinDst}</div>`)+`</div>`;
   if(h.historicos.length)x+=`<div class="sec"><h4>${L.hCambios}</h4>`+h.historicos.map(v=>`<div class="fila">${v.fecha} · UTC${sg(v.de)} → <b>UTC${sg(v.a)}</b></div>`).join("")+`</div>`;
-  c.innerHTML=x;c.hidden=false;};
+  c.innerHTML=x;c.hidden=false;}
 async function pintarGuardadas(d){d=d||await (await fetch("/api/guardadas")).json();const c=d.cartas||[];
   $("#guardadas").innerHTML=c.length?`<span class="et">${t().guardadas}</span>`+c.map(v=>`<span class="chip"><button class="abrir" data-id="${v.id}">${v.nombre}<small>${v.ciudad}</small></button><button class="x" data-del="${v.id}">×</button></span>`).join(""):"";
   $("#guardadas").dataset.datos=JSON.stringify(c);}

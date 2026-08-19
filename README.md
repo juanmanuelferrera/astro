@@ -183,6 +183,23 @@ Por defecto el medio, que es lo más extendido. La casilla de la pestaña de
 carta cambia al verdadero, que oscila alrededor del medio hasta grado y medio
 y mueve a Rāhu de pada. Las daśās no cambian: cuelgan del nakṣatra de la Luna.
 
+## El switch de idioma
+
+Cambiar de idioma rehace **todo** lo que hay montado, no solo lo que se está
+mirando: las pestañas ocultas guardan su contenido y asomarían en el idioma
+anterior al abrirlas. `repintarTodo()` vuelve a pintar los rótulos, el índice
+del curso, el módulo que estuviera abierto, la lista de guardadas, el huso
+resuelto, su panel de historia, la comparación, el ejercicio, la carta y la
+lectura.
+
+Y como parte del texto lo compone el servidor —los yogas, la lectura entera con
+sus fuentes— no basta con repintar: hay que volver a pedirlo con el idioma
+nuevo.
+
+El ejercicio de cálculo a mano se repinta guardando antes lo que el alumno
+lleve escrito y devolviéndoselo después. Perder sus cuentas por tocar el switch
+sería una faena.
+
 ## Comprobar antes de publicar
 
 ```
