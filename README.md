@@ -214,6 +214,17 @@ El ejercicio de cálculo a mano se repinta guardando antes lo que el alumno
 lleve escrito y devolviéndoselo después. Perder sus cuentas por tocar el switch
 sería una faena.
 
+## Empaquetar
+
+```
+./empaquetar/hacer-app.sh      # Astro.app para macOS, con icono y sin terminal
+./empaquetar/hacer-linux.sh    # zip para Linux: los dos binarios y un lanzador
+```
+
+El de macOS no deja empaquetar si el JavaScript no compila o la interfaz no se
+ejecuta. El de Linux mete un lanzador que elige amd64 o arm64 solo, y un LEEME
+con las opciones.
+
 ## Comprobar antes de publicar
 
 ```
