@@ -20,12 +20,26 @@ if command -v node >/dev/null 2>&1; then
   for f in web/*.js; do
     node --check "$f" || { echo "ERROR de sintaxis en $f — no se empaqueta"; exit 1; }
   done
-  # y que ademas se ejecute: la sintaxis correcta no garantiza que pinte nada
-  go build -o /tmp/_astro_p . && /tmp/_astro_p -abrir=false -puerto=8998 >/dev/null 2>&1 &
-  sleep 1.5
-  node pruebas/interfaz.mjs 8998 >/dev/null 2>&1 \
-    || { echo "ERROR: la interfaz falla al ejecutarse — no se empaqueta"; pkill -f _astro_p; exit 1; }
-  pkill -f _astro_p 2>/dev/null; rm -f /tmp/_astro_p
+  # Y que ademas se ejecute: la sintaxis correcta no garantiza que pinte nada.
+  # El binario se compila delante y solo despues se lanza al fondo; si se
+  # encadenan con && y un solo &, el build tambien se va al fondo y la espera
+  # se agota antes de que exista el binario.
+  echo "→ comprobando que la interfaz se ejecuta"
+  go build -o /tmp/_astro_p .
+  /tmp/_astro_p -abrir=false -puerto=8998 >/dev/null 2>&1 &
+  PRUEBA=$!
+  for _ in $(seq 40); do
+    curl -sf -o /dev/null http://localhost:8998/ && break
+    sleep 0.2
+  done
+  if ! node pruebas/interfaz.mjs 8998 >/dev/null 2>&1; then
+    echo "ERROR: la interfaz falla al ejecutarse — no se empaqueta"
+    node pruebas/interfaz.mjs 8998 2>&1 | grep "✗" | head -5
+    kill $PRUEBA 2>/dev/null; exit 1
+  fi
+  kill $PRUEBA 2>/dev/null || true
+  wait $PRUEBA 2>/dev/null || true
+  rm -f /tmp/_astro_p
 else
   echo "⚠ node no esta instalado: el JavaScript no se ha comprobado"
 fi
