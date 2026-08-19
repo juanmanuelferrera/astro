@@ -1,6 +1,10 @@
-package efem
+package occidental
 
-import "fmt"
+import (
+	"fmt"
+
+	"astro/internal/efem"
+)
 
 // Sistema de Palabras Clave (Margaret Hone). La app COMPONE la frase a partir de
 // los componentes; no guarda interpretaciones prefabricadas. Es el paso 1 de los
@@ -76,7 +80,7 @@ func blando(n string) bool { return n == "trígono" || n == "sextil" }
 
 // Interpretar compone la traducción literal de la carta y agrupa por categorías.
 // NO sintetiza: eso es trabajo del que lee, y el módulo 10 explica por qué.
-func (c Carta) Interpretar() Lectura {
+func Interpretar(c efem.Carta) Lectura {
 	var L Lectura
 	for _, p := range c.Cuerpos {
 		if p.Nombre == "Nodo Norte" || p.Nombre == "Nodo Sur" {
@@ -112,15 +116,15 @@ func (c Carta) Interpretar() Lectura {
 			Fuente: fmt.Sprintf("regente de %d (%s) en %d", i+1, r, c.RegenteEn[i]), Peso: 1.2})
 	}
 	// contradicciones: mismo planeta con aspectos duros y blandos a la vez
-	porPlaneta := map[string][]Aspecto{}
+	porPlaneta := map[string][]efem.Aspecto{}
 	for _, a := range c.Aspectos {
 		if a.Orbe <= 6 {
 			porPlaneta[a.A] = append(porPlaneta[a.A], a)
 			porPlaneta[a.B] = append(porPlaneta[a.B], a)
 		}
 	}
-	for _, n := range Orden[:10] {
-		var d, b *Aspecto
+	for _, n := range efem.Orden[:10] {
+		var d, b *efem.Aspecto
 		for i := range porPlaneta[n] {
 			a := porPlaneta[n][i]
 			if duro(a.Nombre) && (d == nil || a.Orbe < d.Orbe) {
@@ -148,7 +152,7 @@ func (c Carta) Interpretar() Lectura {
 				n, d.Nombre, otroD, d.Orbe, b.Nombre, otroB, b.Orbe, manda))
 		}
 	}
-	L.Dominante = c.dominante()
+	L.Dominante = dominante(c)
 	L.Nota = "Esto es el paso 1 de 4: traducción literal, deliberadamente torpe. " +
 		"Agrupar por categorías es el paso 2 y ya está hecho. Los pasos 3 y 4 —resolver las " +
 		"contradicciones y escribirlo como texto seguido— los haces tú. La carta no se cuadra sola."
@@ -157,9 +161,9 @@ func (c Carta) Interpretar() Lectura {
 
 // dominante estima qué planeta manda: regencia del Ascendente, dignidad,
 // angularidad y aspectos exactos.
-func (c Carta) dominante() string {
+func dominante(c efem.Carta) string {
 	p := map[string]float64{}
-	regAsc := RegenteSigno[int(c.Asc/30)]
+	regAsc := efem.RegenteSigno[int(c.Asc/30)]
 	p[regAsc] += 3
 	for _, b := range c.Cuerpos {
 		switch b.Dignidad {
@@ -182,7 +186,7 @@ func (c Carta) dominante() string {
 		}
 	}
 	mejor, max := regAsc, -1.0
-	for _, n := range Orden[:10] {
+	for _, n := range efem.Orden[:10] {
 		if p[n] > max {
 			mejor, max = n, p[n]
 		}

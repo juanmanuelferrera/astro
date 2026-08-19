@@ -5,6 +5,7 @@ package main
 import (
 	"astro/internal/efem"
 	"astro/internal/guardadas"
+	"astro/internal/occidental"
 	"astro/internal/lugares"
 	"embed"
 	"encoding/json"
@@ -206,7 +207,7 @@ func apiLectura(w http.ResponseWriter, r *http.Request) {
 	c := efem.Calcular(ent(r, "anio"), ent(r, "mes"), ent(r, "dia"),
 		ent(r, "hh"), ent(r, "mm"), num(r, "tz"), num(r, "lat"), num(r, "lon"))
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	json.NewEncoder(w).Encode(c.Interpretar())
+	json.NewEncoder(w).Encode(occidental.Interpretar(c))
 }
 
 func apiVerificar(w http.ResponseWriter, r *http.Request) {
