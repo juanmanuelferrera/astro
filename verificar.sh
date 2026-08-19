@@ -32,6 +32,13 @@ for(const tr of ["occidental","jyotisha"]) for(const k of NAV[tr])
 console.log("  ✓ todas las pestañas tienen nombre");`)' 2>/dev/null || \
  { echo "  ⚠ node no instalado, sin comprobar"; }
 
+echo "── castellano escrito a mano ──"
+if command -v node >/dev/null 2>&1; then
+  node pruebas/castellano.mjs
+else
+  echo "  ⚠ node no instalado, sin comprobar"
+fi
+
 echo "── curso: los modulos existen en los dos idiomas ──"
 falta=0
 for t in occidental jyotisha; do

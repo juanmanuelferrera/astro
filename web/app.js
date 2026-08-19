@@ -176,7 +176,7 @@ function tablasVed(c){const x=t();
   h+=`</tbody></table></div><div class="caja"><h3>${x.bhavas}</h3><table><thead><tr><th class="num">${x.casa}</th><th>${x.rasi}</th><th>${x.senor}</th><th>${x.alojado}</th><th>${x.ocupan}</th><th>${x.aspectan}</th></tr></thead><tbody>`;
   c.bhavas.forEach(b=>h+=`<tr><td class="num">${b.numero}</td><td>${b.rasi}</td><td>${cue(b.senor)}</td><td>${x.casa} ${b.senorEn}</td><td>${(b.ocupan||[]).map(cue).join(" ")||"—"}</td><td style="color:var(--muted)">${(b.aspectan||[]).map(cue).join(" ")||"—"}</td></tr>`);
   h+=`</tbody></table></div><div class="caja"><h3>${x.karakas}</h3>
-    ${c.karakamsa?`<p style="margin:0 0 8px;color:var(--muted);font-size:.85rem">Karakāṁśa — el Ātmakāraka cae en <b style="color:var(--ink)">${c.karakamsa}</b> en el navāṁśa. Se usa como tercer ascendente para el dharma.</p>`:""}
+    ${c.karakamsa?`<p style="margin:0 0 8px;color:var(--muted);font-size:.85rem">${x.karakamsa_txt.replace("{r}",`<b style="color:var(--ink)">${c.karakamsa}</b>`)}</p>`:""}
     <table><tbody>`;
   const kn={AK:"Ātmakāraka",AmK:"Amātyakāraka",BK:"Bhrātṛkāraka",MK:"Mātṛkāraka",PiK:"Pitṛkāraka",PK:"Putrakāraka",GK:"Ñātikāraka"};
   Object.keys(kn).forEach(k=>h+=`<tr><td><b>${k}</b></td><td>${cue(c.karakas[k]||"—")}</td><td style="color:var(--muted)">${kn[k]}</td></tr>`);
@@ -317,12 +317,26 @@ function pintarDasas(c){let h=`<div class="caja"><h3>${t().vimsottari}</h3><div 
 
 // ═══ comparación: la única pantalla con las dos ═══
 async function comparar(){const x=t();
-  const d=await (await fetch("/api/comparar?"+params())).json();
+    // El comparador tiene que enseñar el mismo nodo que la carta; si no, Rāhu
+  // saldría en un sitio en una pestaña y en otro en la de al lado.
+  const nodo=$("#nodoV")&&$("#nodoV").checked?"&nodo=verdadero":"";
+  const d=await (await fetch("/api/comparar?"+params()+nodo)).json();
   let h=`<div class="caja"><h3>${x.compTit}</h3><p style="margin:0 0 12px;color:var(--muted)">${x.compTxt}</p>
-    <p style="margin:0 0 14px"><b>ayanāṁśa ${d.ayanamsa.toFixed(4)}°</b> — ésa es toda la diferencia entre las dos columnas.</p>
+    <p style="margin:0 0 14px">${x.comp_ayan.replace("{a}",`<b>${d.ayanamsa.toFixed(4)}</b>`)}</p>
     <table><thead><tr><th colspan="2"></th><th>${x.tropical}</th><th>${x.sidereo}</th><th></th></tr></thead><tbody>
     <tr><td></td><td><b>${x.ang_asc} / ${x.lagnaT}</b></td><td>${gms(d.ascGr)} ${nom(d.ascIdx)}</td><td>${gms(d.lagGr)} ${RASIS[d.lagIdx]}</td><td class="cambia">${d.cambiaLagna?x.cambia:""}</td></tr>`;
   d.filas.forEach(f=>h+=`<tr><td class="gl">${f.glifo}</td><td>${cue(f.cuerpo)}</td><td>${gms(f.tropGr)} ${nom(f.tropIdx)}</td><td>${gms(f.sidGr)} ${RASIS[f.sidIdx]}</td><td class="cambia">${f.cambia?x.cambia:""}</td></tr>`);
+  h+=`</tbody></table>`;
+  const nS=d.filas.filter(f=>f.cambia).length, nC=d.filas.filter(f=>f.cambiaC).length;
+  h+=`<p style="margin:12px 0 0;color:var(--muted)">${x.comp_cuenta
+        .replace("{n}",`<b>${nC}</b>`).replace("{t}",d.filas.length).replace("{s}",`<b>${nS}</b>`)}</p></div>`;
+  // Las casas: la otra diferencia, y la que más cambia una lectura.
+  h+=`<div class="caja"><h3>${x.comp_casas}</h3>
+    <p style="margin:0 0 12px;color:var(--muted)">${x.comp_casasTxt}</p>
+    <table><thead><tr><th colspan="2"></th><th>${x.comp_placido}</th><th>${x.comp_entero}</th><th></th></tr></thead><tbody>`;
+  d.filas.forEach(f=>h+=`<tr><td class="gl">${f.glifo}</td><td>${cue(f.cuerpo)}</td>
+    <td>${f.casaOcc||"—"}</td><td>${f.casaVed||"—"}</td>
+    <td class="cambia">${f.cambiaC?x.comp_otraCasa:""}</td></tr>`);
   $("#cmp").innerHTML=h+`</tbody></table></div>`;}
 
 // ═══ curso ═══

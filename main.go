@@ -166,8 +166,9 @@ func idioma(r *http.Request) string {
 // Se muestra a propósito: enseña por qué el mismo nacimiento da signos distintos.
 func apiComparar(w http.ResponseWriter, r *http.Request) {
 	a, m, d, h, mi, tz, lat, lo := datos(r)
-	occ := efem.Calcular(a, m, d, h, mi, tz, lat, lo)
-	ved := jyotisha.Calcular(a, m, d, h, mi, tz, lat, lo)
+	nodoV := nodoVerdadero(r)
+	occ := efem.CalcularCon(a, m, d, h, mi, tz, lat, lo, nodoV)
+	ved := jyotisha.CalcularCon(a, m, d, h, mi, tz, lat, lo, nodoV)
 
 	// Se mandan indices y grados, no cadenas ya compuestas: el nombre del signo
 	// depende del idioma y lo pone el navegador.
@@ -179,6 +180,9 @@ func apiComparar(w http.ResponseWriter, r *http.Request) {
 		SidIdx   int     `json:"sidIdx"`
 		SidGr    float64 `json:"sidGr"`
 		Cambia   bool    `json:"cambia"`
+		CasaOcc  int     `json:"casaOcc"`  // Plácido
+		CasaVed  int     `json:"casaVed"`  // signo entero
+		CambiaC  bool    `json:"cambiaC"`  // la casa no es la misma
 	}
 	var filas []fila
 	ved2 := map[string]jyotisha.Graha{}
@@ -198,7 +202,9 @@ func apiComparar(w http.ResponseWriter, r *http.Request) {
 		filas = append(filas, fila{Cuerpo: n, Glifo: v.Glifo,
 			TropIdx: c.SignoIdx, TropGr: c.Grado,
 			SidIdx: v.RasiIdx, SidGr: v.Grado,
-			Cambia: c.Signo != jyotisha.RasisEs[v.RasiIdx]})
+			Cambia:  c.Signo != jyotisha.RasisEs[v.RasiIdx],
+			CasaOcc: c.CasaP, CasaVed: v.Bhava,
+			CambiaC: c.CasaP != v.Bhava})
 	}
 	jsonOut(w, map[string]any{
 		"ayanamsa":     ved.Ayanamsa,

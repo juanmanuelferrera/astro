@@ -183,6 +183,20 @@ Por defecto el medio, que es lo más extendido. La casilla de la pestaña de
 carta cambia al verdadero, que oscila alrededor del medio hasta grado y medio
 y mueve a Rāhu de pada. Las daśās no cambian: cuelgan del nakṣatra de la Luna.
 
+## La pestaña de comparar
+
+Es la única pantalla donde las dos tradiciones aparecen juntas, y enseña las
+**dos** diferencias, no una:
+
+- El **zodíaco**: tropical contra sidéreo, con el ayanāṁśa que los separa y qué
+  cuerpos cambian de signo por él.
+- Las **casas**: Plácido, que las hace desiguales y depende de la latitud,
+  contra el signo entero. Esta suele pesar más y casi nunca se cuenta. En la
+  carta de prueba cambian de casa 6 de 9 cuerpos y de signo solo 4.
+
+Respeta el selector de nodo, para que Rāhu no salga en un sitio en una pestaña
+y en otro en la de al lado.
+
 ## El switch de idioma
 
 Cambiar de idioma rehace **todo** lo que hay montado, no solo lo que se está
