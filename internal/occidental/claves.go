@@ -71,6 +71,12 @@ var es = tabla{
 		"tension": "la tensión", "facilidad": "la facilidad",
 		"dom":    "%s (regente del Ascendente: %s)",
 		"nota":   "Esto es el paso 1 de 4: traducción literal, deliberadamente torpe. Agrupar por categorías es el paso 2 y ya está hecho. Los pasos 3 y 4 —resolver las contradicciones y escribirlo como texto seguido— los haces tú. La carta no se cuadra sola.",
+		"convergen":       "%s: coinciden %d técnicas distintas — %s. Ahí sí hay un periodo.",
+		"porProgresion":   "%s en progresión",
+		"porRevolucion":   "el Ascendente del año",
+		"porTransito":     "el tránsito de %s",
+		"sinConvergencia": "Ninguna técnica coincide con otra ahora mismo. Eso también es una respuesta: no hay un periodo marcado, y un tránsito suelto casi nunca produce nada visible.",
+		"predNota":        "La predicción no inventa: activa lo que ya está en la natal. Da periodos y qué se pone sobre la mesa en ellos, no sucesos ni fechas. Y se lee después de la natal, nunca antes: quien mira tránsitos sin conocer la carta está leyendo el reloj sin saber qué hora importa.",
 	},
 }
 
@@ -117,7 +123,9 @@ var en = tabla{
 		"Urano": "Uranus", "Neptuno": "Neptune", "Plutón": "Pluto",
 		"conjunción": "conjunction", "oposición": "opposition", "trígono": "trine",
 		"cuadratura": "square", "sextil": "sextile", "semicuadratura": "semisquare",
-		"sesquicuadratura": "sesquisquare", "quincuncio": "quincunx", "semisextil": "semisextile"},
+		"sesquicuadratura": "sesquisquare", "quincuncio": "quincunx", "semisextil": "semisextile",
+		"Ascendente": "Ascendant", "Medio Cielo": "Midheaven",
+		"Descendente": "Descendant", "Fondo del Cielo": "Imum Coeli"},
 	f: map[string]string{
 		"pos":    "%s expresses itself %s, in the field of %s",
 		"asp":    "%s %s %s.",
@@ -126,6 +134,12 @@ var en = tabla{
 		"tension": "the tension", "facilidad": "the ease",
 		"dom":    "%s (ruler of the Ascendant: %s)",
 		"nota":   "This is step 1 of 4: a literal translation, deliberately clumsy. Grouping into categories is step 2 and is already done. Steps 3 and 4 — resolving the contradictions and writing it as running prose — are yours. A chart does not square itself.",
+		"convergen":       "%s: %d different techniques agree — %s. There is a period there.",
+		"porProgresion":   "the progressed %s",
+		"porRevolucion":   "the Ascendant of the year",
+		"porTransito":     "the transit of %s",
+		"sinConvergencia": "No technique agrees with another right now. That is an answer too: there is no marked period, and a lone transit almost never produces anything visible.",
+		"predNota":        "Prediction does not invent: it activates what is already in the natal chart. It gives periods and what is put on the table during them, not events or dates. And it is read after the natal chart, never before: whoever looks at transits without knowing the chart is reading the clock without knowing which hour matters.",
 	},
 }
 

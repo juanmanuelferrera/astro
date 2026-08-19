@@ -39,6 +39,7 @@ func main() {
 	http.HandleFunc("/api/comparar", apiComparar)       // las dos, lado a lado
 	http.HandleFunc("/api/lectura", apiLectura)         // occidental
 	http.HandleFunc("/api/lecturaved", apiLecturaVed)   // jyotiṣa
+	http.HandleFunc("/api/prediccion", apiPrediccion)   // occidental: tiempo
 	http.HandleFunc("/api/verificar", apiVerificar)
 	http.HandleFunc("/api/lugares", apiLugares)
 	http.HandleFunc("/api/huso", apiHuso)
@@ -152,6 +153,21 @@ func apiLectura(w http.ResponseWriter, r *http.Request) {
 func apiLecturaVed(w http.ResponseWriter, r *http.Request) {
 	a, m, d, h, mi, tz, lat, lo := datos(r)
 	jsonOut(w, jyotisha.Interpretar(jyotisha.Calcular(a, m, d, h, mi, tz, lat, lo), idioma(r)))
+}
+
+// apiPrediccion da tránsitos, progresiones y revolución solar para una fecha.
+// Sin ?cuando= se toma hoy, que es lo que se quiere el noventa por ciento de
+// las veces.
+func apiPrediccion(w http.ResponseWriter, r *http.Request) {
+	a, m, d, h, mi, tz, lat, lo := datos(r)
+	natal := efem.Calcular(a, m, d, h, mi, tz, lat, lo)
+	cuando := time.Now()
+	if s := r.URL.Query().Get("cuando"); s != "" {
+		if t, err := time.Parse("2006-01-02", s); err == nil {
+			cuando = t
+		}
+	}
+	jsonOut(w, occidental.Predecir(natal, cuando, idioma(r)))
 }
 
 // idioma lee ?lang= y cae en español si no viene o no se reconoce.

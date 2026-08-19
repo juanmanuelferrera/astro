@@ -64,6 +64,34 @@ type Carta struct {
 	Aspectos           []Aspecto   `json:"aspectos"`
 	Regentes           [12]string  `json:"regentes"`
 	RegenteEn          [12]int     `json:"regenteEn"`
+
+	// El sitio y la fecha se guardan porque la predicción los vuelve a
+	// necesitar: los tránsitos se miran desde el mismo lugar, y la revolución
+	// solar tiene que saber en qué día del año cae el cumpleaños.
+	Anio int     `json:"anio"`
+	Mes  int     `json:"mes"`
+	Dia  int     `json:"dia"`
+	Lat  float64 `json:"lat"`
+	Lon  float64 `json:"lon"`
+}
+
+// TablaAspectos deja consultar los aspectos y sus orbes desde fuera del
+// paquete, para no repetir la tabla en el motor de predicción.
+func TablaAspectos() []struct {
+	Nombre, Glifo string
+	Angulo, Orbe  float64
+} {
+	var out []struct {
+		Nombre, Glifo string
+		Angulo, Orbe  float64
+	}
+	for _, a := range tablaAspectos {
+		out = append(out, struct {
+			Nombre, Glifo string
+			Angulo, Orbe  float64
+		}{a.nombre, a.glifo, a.angulo, a.orbe})
+	}
+	return out
 }
 
 var tablaAspectos = []struct {
@@ -111,6 +139,15 @@ func casaDe(lon float64, c [12]float64) int {
 	return 1
 }
 
+// CalcularJD levanta la carta para un instante dado en día juliano. Hace falta
+// para las progresiones —que se calculan a jd + edad días— y para la revolución
+// solar, cuyo instante sale de resolver una ecuación y no de un reloj.
+func CalcularJD(jd, lat, lonGeo float64) Carta {
+	a, m, d, h := DeDiaJuliano(jd)
+	return CalcularCon(a, m, int(d), int(h), int(math.Round((h-math.Floor(h))*60)),
+		0, lat, lonGeo, false)
+}
+
 // Calcular levanta la carta completa. tz en horas (este positivo), lonGeo este positivo.
 // Calcular usa el nodo lunar medio, que es lo tradicional en occidental.
 func Calcular(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64) Carta {
@@ -145,7 +182,8 @@ func CalcularCon(anio, mes, dia, hh, mm int, tz, lat, lonGeo float64, nodoVerdad
 	c := Carta{JD: jd, TSG: tsg, TSL: tsl, Oblicuidad: eps,
 		Asc: asc, MC: mc, Dsc: norm360(asc + 180), IC: norm360(mc + 180),
 		Angulos: [4]float64{asc, norm360(asc + 180), mc, norm360(mc + 180)},
-		CuspP:   cp, CuspI: ci, PlacidusOK: ok}
+		CuspP:   cp, CuspI: ci, PlacidusOK: ok,
+		Anio: anio, Mes: mes, Dia: int(d), Lat: lat, Lon: lonGeo}
 	c.UT = time.Date(anio, time.Month(mes), int(d), int(horaUT),
 		int((horaUT-math.Floor(horaUT))*60), 0, 0, time.UTC).Format("2006-01-02 15:04 UT")
 

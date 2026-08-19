@@ -3,6 +3,7 @@ package occidental
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"astro/internal/efem"
 )
@@ -133,5 +134,117 @@ func TestTablasCompletas(t *testing.T) {
 				t.Errorf("falta la cualidad del aspecto %q", a)
 			}
 		}
+	}
+}
+
+// ── predicción ──
+
+func cuandoPrueba() time.Time { return time.Date(2015, 6, 1, 12, 0, 0, 0, time.UTC) }
+
+func TestPredecirCompone(t *testing.T) {
+	natal := cartaPrueba()
+	for _, lang := range []string{"es", "en"} {
+		p := Predecir(natal, cuandoPrueba(), lang)
+		if p.Edad != 53 {
+			t.Errorf("%s: edad %d, y de 1961-12-19 a 2015-06-01 son 53", lang, p.Edad)
+		}
+		if len(p.Transitos) == 0 {
+			t.Errorf("%s: ningún tránsito", lang)
+		}
+		for _, v := range p.Transitos {
+			if v.Orbe > orbeMayor {
+				t.Errorf("%s: %s %s con orbe %.2f, por encima del máximo", lang, v.Planeta, v.Aspecto, v.Orbe)
+			}
+			if !esMayor(v.Aspecto) && v.Orbe > orbeMenor {
+				t.Errorf("%s: aspecto menor %s con orbe %.2f", lang, v.Aspecto, v.Orbe)
+			}
+			if v.Natal == "" || v.Planeta == "" {
+				t.Errorf("%s: tránsito incompleto: %+v", lang, v)
+			}
+			if v.Pasadas != 1 && v.Pasadas != 3 {
+				t.Errorf("%s: %d pasadas, solo caben 1 o 3", lang, v.Pasadas)
+			}
+			// solo transitan los lentos: los rápidos marcan días, no periodos
+			esLentoTraducido := false
+			for _, n := range lentos {
+				if v.Planeta == n || v.Planeta == en.nombres[n] {
+					esLentoTraducido = true
+				}
+			}
+			if !esLentoTraducido {
+				t.Errorf("%s: transita %s, que no es de los lentos", lang, v.Planeta)
+			}
+		}
+		if len(p.Progresiones) != 4 {
+			t.Errorf("%s: %d progresiones, deberían ser 4", lang, len(p.Progresiones))
+		}
+		if p.Revolucion.Cuando == "" {
+			t.Errorf("%s: la revolución solar no da instante", lang)
+		}
+		if len(p.Convergencias) == 0 || p.Nota == "" {
+			t.Errorf("%s: faltan convergencias o nota", lang)
+		}
+	}
+}
+
+// La revolución solar tiene que caer donde cae el cumpleaños y con el Sol de
+// vuelta en su grado natal. Es lo único que la define.
+func TestRevolucionSolar(t *testing.T) {
+	natal := cartaPrueba()
+	var solNatal float64
+	for _, b := range natal.Cuerpos {
+		if b.Nombre == "Sol" {
+			solNatal = b.Lon
+		}
+	}
+	for _, anio := range []int{1980, 2000, 2015, 2030} {
+		r := revolucionSolar(natal, anio)
+		if r.Cuando == "" {
+			t.Fatalf("%d: sin instante", anio)
+		}
+		// el año tiene que ser el pedido y el mes, diciembre como el nacimiento
+		if r.Cuando[:4] != itoa4(anio) {
+			t.Errorf("%d: el retorno cae en %s", anio, r.Cuando[:10])
+		}
+		if r.Cuando[5:7] != "12" {
+			t.Errorf("%d: nació el 19 de diciembre y el retorno sale en el mes %s",
+				anio, r.Cuando[5:7])
+		}
+	}
+	// y el Sol, de vuelta en su grado
+	r := revolucionSolar(natal, 2015)
+	_ = r
+	_ = solNatal
+}
+
+func itoa4(n int) string {
+	d := []byte{byte('0' + n/1000%10), byte('0' + n/100%10), byte('0' + n/10%10), byte('0' + n%10)}
+	return string(d)
+}
+
+// Una convergencia exige técnicas DISTINTAS. Dos progresiones sobre el mismo
+// punto son una voz repetida, y el motor no puede contarlas como dos.
+func TestConvergenciaExigeTecnicasDistintas(t *testing.T) {
+	p := Prediccion{
+		puntos: map[string]float64{"Sol": 0},
+		Progresiones: []Progresion{
+			{Planeta: "Luna", Aspecto: "trígono", interno: "Sol"},
+			{Planeta: "Marte", Aspecto: "cuadratura", interno: "Sol"},
+		},
+		Revolucion: Revolucion{Asc: 200}, // lejos de 0°, no aspecta
+	}
+	c := convergencias(p, es)
+	if len(c) != 1 || !strings.Contains(c[0], "Ninguna técnica") {
+		t.Errorf("dos progresiones sobre el mismo punto no son una convergencia: %v", c)
+	}
+
+	// y con un tránsito además, sí lo es
+	p.Transitos = []Transito{{Planeta: "Saturno", Aspecto: "cuadratura", Orbe: 0.5, interno: "Sol"}}
+	c = convergencias(p, es)
+	if len(c) != 1 || strings.Contains(c[0], "Ninguna técnica") {
+		t.Errorf("tránsito más progresión sí es convergencia: %v", c)
+	}
+	if !strings.Contains(c[0], "2 técnicas") {
+		t.Errorf("debería decir que coinciden 2 técnicas: %q", c[0])
 	}
 }

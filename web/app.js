@@ -38,6 +38,7 @@ async function repintarTodo(){
   if (!$("#hist").hidden) await pintarHistoria();
   if ($("#texto").dataset.f) await abrirModulo($("#texto").dataset.f);
   if ($("#cmp").innerHTML) await comparar();
+  if ($("#prd").innerHTML) await predecir($("#prFecha")?$("#prFecha").value:"");
   if ($("#ejBox").innerHTML) pintarEjercicio();
   if (DATOS) await levantar();                       // vuelve a pedir la carta y la lectura
 }
@@ -62,6 +63,7 @@ function pintarNav() {
     n.querySelectorAll("button[data-s]").forEach(x => x.classList.toggle("on", x===b));
     document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id===b.dataset.s));
     if (b.dataset.s === "comparar") comparar();
+    if (b.dataset.s === "prediccion") predecir();
     if (b.dataset.s === "ejercicio") pintarEjercicio();
   });
   $("#imprimir").onclick = () => window.print();
@@ -338,6 +340,50 @@ async function comparar(){const x=t();
     <td>${f.casaOcc||"—"}</td><td>${f.casaVed||"—"}</td>
     <td class="cambia">${f.cambiaC?x.comp_otraCasa:""}</td></tr>`);
   $("#cmp").innerHTML=h+`</tbody></table></div>`;}
+
+// ═══ predicción occidental ═══
+async function predecir(cuando){const x=t();
+  const f=cuando||($("#prFecha")&&$("#prFecha").value)||"";
+  const p=await (await fetch("/api/prediccion?"+params()+"&lang="+LANG+(f?"&cuando="+f:""))).json();
+  const sig=l=>`${gms(l%30)} ${nom(Math.floor(l/30))}`;
+  let h=`<div class="caja"><h3>${x.nav.prediccion}</h3>
+    <p style="color:var(--muted);margin:0 0 12px">${x.pr_lead}</p>
+    <label style="display:inline-flex;align-items:center;gap:8px;font-size:.85rem">
+      ${x.pr_fecha} <input type="date" id="prFecha" value="${f}">
+      <button class="go" id="prHoy" style="padding:4px 12px">${x.pr_hoy}</button>
+    </label>
+    <span style="color:var(--muted);margin-left:12px">${x.pr_edad} ${p.edad}</span></div>`;
+
+  // convergencias primero: es lo único que marca un periodo
+  h+=`<div class="caja"><h3>${x.pr_conv}</h3><p style="color:var(--muted);margin:0 0 12px">${x.pr_convTxt}</p>`;
+  p.convergencias.forEach(c=>h+=`<p style="margin:0 0 9px">${c}</p>`);
+  h+=`</div>`;
+
+  h+=`<div class="caja"><h3>${x.pr_transitos}</h3><p style="color:var(--muted);margin:0 0 12px">${x.pr_transitosTxt}</p>
+    <div style="overflow-x:auto"><table><thead><tr><th>${x.pr_planeta}</th><th></th><th>${x.pr_aspecto}</th>
+    <th>${x.pr_natal}</th><th>${x.pr_orbe}</th><th></th><th>${x.pr_casa}</th><th>${x.pr_pasadas}</th></tr></thead><tbody>`;
+  p.transitos.forEach(v=>h+=`<tr><td><b>${cue(v.planeta)}</b>${v.retro?" ℞":""}</td><td class="gl">${v.glifo}</td>
+    <td>${v.aspecto}</td><td>${cue(v.natal)}</td>
+    <td style="font-variant-numeric:tabular-nums">${v.orbe.toFixed(2)}°</td>
+    <td style="color:var(--muted)">${v.aplica?x.pr_aplica:x.pr_separa}</td>
+    <td>${v.casa||"—"}</td><td>${v.pasadas}</td></tr>`);
+  h+=`</tbody></table></div><div class="aviso">${x.pr_pasadasTxt}</div></div>`;
+
+  h+=`<div class="caja"><h3>${x.pr_prog}</h3><p style="color:var(--muted);margin:0 0 12px">${x.pr_progTxt}</p><table><tbody>`;
+  p.progresiones.forEach(g=>h+=`<tr><td><b>${cue(g.planeta)}</b></td><td>${gms(g.grado)} ${nom(g.signoIdx)}</td>
+    <td>${x.pr_casa} ${g.casa||"—"}</td><td style="color:var(--muted)">${g.aspecto?`${g.aspecto} → ${cue(g.natal)} (${g.orbe}°)`:""}</td></tr>`);
+  h+=`</tbody></table></div>`;
+
+  const r=p.revolucion;
+  h+=`<div class="caja"><h3>${x.pr_rs}</h3><p style="color:var(--muted);margin:0 0 12px">${x.pr_rsTxt}</p><table><tbody>
+    <tr><td>${x.pr_rsCuando}</td><td><b>${r.cuando}</b></td></tr>
+    <tr><td>${x.pr_rsAsc}</td><td><b>${sig(r.asc)}</b></td></tr>
+    <tr><td>${x.pr_rsMC}</td><td><b>${sig(r.mc)}</b></td></tr>
+    <tr><td>${x.pr_rsCasa}</td><td><b>${r.casa||"—"}</b></td></tr>
+    </tbody></table></div><div class="aviso">${p.nota}</div>`;
+  $("#prd").innerHTML=h;
+  $("#prFecha").onchange=()=>predecir($("#prFecha").value);
+  $("#prHoy").onclick=e=>{e.preventDefault();predecir("");};}
 
 // ═══ curso ═══
 function pintarCurso(){const x=t();

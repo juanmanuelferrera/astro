@@ -183,6 +183,27 @@ Por defecto el medio, que es lo más extendido. La casilla de la pestaña de
 carta cambia al verdadero, que oscila alrededor del medio hasta grado y medio
 y mueve a Rāhu de pada. Las daśās no cambian: cuelgan del nakṣatra de la Luna.
 
+## Predicción occidental
+
+El módulo 12 enseña tránsitos, progresiones secundarias y revolución solar, y
+hasta ahora el programa lo explicaba sin hacerlo. Ya están las tres, en
+`internal/occidental/prediccion.go`.
+
+- **Tránsitos** — solo los lentos, de Marte a Plutón: los rápidos marcan días y
+  no periodos. Orbe estrecho a propósito (1,5° los aspectos mayores, 0,4° los
+  menores; con el mismo orbe la lista se llenaba de sesquicuadraturas y el
+  tránsito que importaba quedaba enterrado). Dice si aplica o separa, y si el
+  planeta va a retrogradar encima del punto y pasar tres veces.
+- **Progresiones secundarias** — un día después del nacimiento por año de vida.
+- **Revolución solar** — el instante en que el Sol vuelve a su grado natal, por
+  bisección.
+
+Y lo que las une, que es lo que el módulo 12 pide de verdad: **las
+convergencias**. Un periodo importa cuando dos técnicas DISTINTAS señalan el
+mismo punto natal. Dos progresiones sobre el mismo sitio son una voz repetida y
+no cuentan — es la regla del módulo 9 aplicada al tiempo. Cuando no coincide
+nada, lo dice en lugar de rellenar.
+
 ## La pestaña de comparar
 
 Es la única pantalla donde las dos tradiciones aparecen juntas, y enseña las
@@ -278,6 +299,17 @@ los siglos siempre, y para el año 837 eran cuatro días de desfase—, y la
 referencia de orto la estaba pidiendo con otro criterio de altura, así que los
 números no eran comparables.
 
+## Integración continua
+
+`.github/workflows/comprobar.yml` ejecuta en cada push lo mismo que
+`verificar.sh`: compila, `vet`, los tests con cobertura, la sintaxis del
+JavaScript, el detector de castellano a mano, la paridad de idiomas, que el
+curso esté traducido entero, que la interfaz se ejecute de verdad, y que el
+binario compile para las cinco combinaciones de sistema y arquitectura.
+
+Existe porque los tests no servían de mucho dependiendo de que yo me acordara
+de correrlos.
+
 ## Comprobar antes de publicar
 
 ```
@@ -296,5 +328,6 @@ nada. Pasó, y en dos versiones publicadas.
 
 ## Pendiente
 
+- Ejercicio de cálculo a mano para jyotiṣa (el occidental ya está)
 - Daśās distintas de la vimśottarī (aṣṭottarī, yoginī, cara)
 - Praśna: la carta del momento de la pregunta

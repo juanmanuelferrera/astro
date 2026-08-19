@@ -1,0 +1,86 @@
+name: comprobar
+
+# Los tests existían y no los ejecutaba nada al hacer push: dependían de que me
+# acordara de correr verificar.sh. Esto los ejecuta siempre.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  go:
+    name: Go — compila, vet y tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./... -cover
+
+  interfaz:
+    name: Interfaz — sintaxis, idiomas y ejecución
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: sintaxis del JavaScript
+        run: for f in web/*.js; do node --check "$f"; done
+
+      - name: castellano escrito a mano
+        run: node pruebas/castellano.mjs
+
+      - name: los dos idiomas emparejados
+        run: |
+          node -e '
+          const fs=require("fs");
+          eval(fs.readFileSync("web/i18n.js","utf8")+`
+          const a=Object.keys(T.es),b=Object.keys(T.en);
+          const f=a.filter(k=>!b.includes(k)).concat(b.filter(k=>!a.includes(k)));
+          if(f.length){console.error("claves desparejadas: "+f.join(", "));process.exit(1);}
+          for(const tr of ["occidental","jyotisha"]) for(const k of NAV[tr])
+            if(!T.es.nav[k]||!T.en.nav[k]){console.error("pestaña sin nombre: "+k);process.exit(1);}
+          console.log(a.length+" claves en los dos idiomas");`)'
+
+      - name: el curso, traducido entero
+        run: |
+          falta=0
+          for t in occidental jyotisha; do
+            for f in web/curso/$t/*.md; do
+              [ -f "web/curso/$t/en/$(basename "$f")" ] || { echo "falta $t/en/$(basename "$f")"; falta=1; }
+            done
+          done
+          exit $falta
+
+      - name: la interfaz se ejecuta
+        run: |
+          go build -o /tmp/astro .
+          /tmp/astro -abrir=false -puerto=8999 &
+          for _ in $(seq 40); do curl -sf -o /dev/null http://localhost:8999/ && break; sleep 0.25; done
+          node pruebas/interfaz.mjs 8999
+
+  empaquetar:
+    name: Compila para las tres plataformas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+      - run: |
+          for par in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            GOOS=${par%/*} GOARCH=${par#*/} go build -o /dev/null . || exit 1
+            echo "  $par"
+          done

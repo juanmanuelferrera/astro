@@ -79,3 +79,35 @@ func Oblicuidad(jd float64) float64 {
 	_, eps := Nutacion(jd)
 	return eps
 }
+
+// DeDiaJuliano es la vuelta de DiaJuliano: del día juliano a fecha civil y
+// hora UT. Meeus, capítulo 7. Respeta el corte gregoriano igual que la ida.
+func DeDiaJuliano(jd float64) (anio, mes int, dia, horaUT float64) {
+	jd += 0.5
+	z := math.Floor(jd)
+	f := jd - z
+	a := z
+	if z >= 2299161 { // a partir del 15 de octubre de 1582
+		alfa := math.Floor((z - 1867216.25) / 36524.25)
+		a = z + 1 + alfa - math.Floor(alfa/4)
+	}
+	b := a + 1524
+	c := math.Floor((b - 122.1) / 365.25)
+	d := math.Floor(365.25 * c)
+	e := math.Floor((b - d) / 30.6001)
+
+	diaEnt := b - d - math.Floor(30.6001*e) + f
+	if e < 14 {
+		mes = int(e - 1)
+	} else {
+		mes = int(e - 13)
+	}
+	if mes > 2 {
+		anio = int(c - 4716)
+	} else {
+		anio = int(c - 4715)
+	}
+	dia = math.Floor(diaEnt)
+	horaUT = (diaEnt - dia) * 24
+	return
+}
